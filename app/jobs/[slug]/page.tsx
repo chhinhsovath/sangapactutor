@@ -5,7 +5,7 @@ import { Layout, Typography, Space, Tag, Button, Divider, Spin, Card } from 'ant
 import { ArrowLeftOutlined, EnvironmentOutlined, DollarOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import type { JobWithDetails } from '@/lib/types';
+import type { TutorWithDetails } from '@/lib/types';
 
 const { Header, Content, Footer } = Layout;
 const { Title, Text, Paragraph } = Typography;
@@ -13,7 +13,7 @@ const { Title, Text, Paragraph } = Typography;
 export default function JobDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
-  const [job, setJob] = useState<JobWithDetails | null>(null);
+  const [job, setJob] = useState<TutorWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,20 +32,8 @@ export default function JobDetailPage() {
   const companyWebsite = process.env.NEXT_PUBLIC_COMPANY_WEBSITE || '#';
 
   const formatSalary = () => {
-    if (!job?.salaryMin || !job?.salaryMax) return null;
-    
-    const formatter = new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    });
-
-    if (job.salaryPeriod === 'hour') {
-      return `$${job.salaryMin}-${job.salaryMax}/hour`;
-    }
-    
-    return `${formatter.format(job.salaryMin)}-${formatter.format(job.salaryMax)}/year`;
+    if (!job?.hourlyRate) return null;
+    return `$${job.hourlyRate}/hour`;
   };
 
   if (loading) {
@@ -75,12 +63,6 @@ export default function JobDetailPage() {
     );
   }
 
-  const workArrangementColor = {
-    'On-site': 'blue',
-    'Remote': 'green',
-    'Hybrid': 'purple',
-  }[job.workArrangement] || 'default';
-
   return (
     <Layout style={{ minHeight: '100vh', background: '#f5f5f5' }}>
       <Header style={{ background: '#fff', padding: '0 48px', borderBottom: '1px solid #f0f0f0' }}>
@@ -105,20 +87,21 @@ export default function JobDetailPage() {
             <Space direction="vertical" size="large" style={{ width: '100%' }}>
               <div>
                 <Title level={1} style={{ marginBottom: 16 }}>
-                  {job.title}
+                  {job.firstName} {job.lastName}
                 </Title>
-                
+
                 <Space size={[0, 8]} wrap>
-                  <Tag color="default">{job.department.name}</Tag>
-                  <Tag color={workArrangementColor}>{job.workArrangement}</Tag>
-                  <Tag>{job.employmentType}</Tag>
+                  <Tag color="default">{job.subject.name}</Tag>
+                  <Tag color="blue">{job.specialization}</Tag>
+                  <Tag>{job.level}</Tag>
+                  {job.isVerified && <Tag color="green">Verified</Tag>}
                 </Space>
               </div>
 
               <Space direction="vertical" size={8}>
                 <Space>
                   <EnvironmentOutlined />
-                  <Text strong>{job.location.name}</Text>
+                  <Text strong>{job.country.name} {job.country.flag}</Text>
                 </Space>
                 
                 {formatSalary() && (
@@ -132,35 +115,41 @@ export default function JobDetailPage() {
               <Divider />
 
               <div>
-                <Title level={3}>About the Role</Title>
+                <Title level={3}>About the Tutor</Title>
                 <Paragraph style={{ fontSize: 16, whiteSpace: 'pre-wrap' }}>
-                  {job.description}
+                  {job.bio}
                 </Paragraph>
               </div>
 
-              {job.responsibilities && (
+              {job.teachingStyle && (
                 <div>
-                  <Title level={3}>Responsibilities</Title>
+                  <Title level={3}>Teaching Style</Title>
                   <Paragraph style={{ fontSize: 16, whiteSpace: 'pre-wrap' }}>
-                    {job.responsibilities}
+                    {job.teachingStyle}
                   </Paragraph>
                 </div>
               )}
 
-              {job.requirements && (
+              {job.yearsExperience && (
                 <div>
-                  <Title level={3}>Requirements</Title>
-                  <Paragraph style={{ fontSize: 16, whiteSpace: 'pre-wrap' }}>
-                    {job.requirements}
+                  <Title level={3}>Experience</Title>
+                  <Paragraph style={{ fontSize: 16 }}>
+                    {job.yearsExperience} years of teaching experience
+                  </Paragraph>
+                  <Paragraph style={{ fontSize: 16 }}>
+                    Total lessons completed: {job.totalLessons || 0}
+                  </Paragraph>
+                  <Paragraph style={{ fontSize: 16 }}>
+                    Student reviews: {job.totalReviews || 0} ({job.rating || 'N/A'} rating)
                   </Paragraph>
                 </div>
               )}
 
-              {job.benefits && (
+              {job.spokenLanguages && (
                 <div>
-                  <Title level={3}>Benefits</Title>
-                  <Paragraph style={{ fontSize: 16, whiteSpace: 'pre-wrap' }}>
-                    {job.benefits}
+                  <Title level={3}>Languages Spoken</Title>
+                  <Paragraph style={{ fontSize: 16 }}>
+                    {JSON.parse(job.spokenLanguages).join(', ')}
                   </Paragraph>
                 </div>
               )}
@@ -168,7 +157,7 @@ export default function JobDetailPage() {
               <Divider />
 
               <Button type="primary" size="large" block>
-                Apply for this position
+                Book a Lesson
               </Button>
             </Space>
           </Card>

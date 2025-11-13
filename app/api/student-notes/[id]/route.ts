@@ -9,7 +9,8 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const noteId = parseInt(params.id);
+    const { id: idStr } = await params;
+    const noteId = parseInt(idStr);
     const body = await request.json();
 
     const updatedNote = await db
@@ -35,7 +36,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const noteId = parseInt(params.id);
+    const { id: idStr } = await params;
+    const noteId = parseInt(idStr);
 
     const deletedNote = await db
       .delete(studentNotes)

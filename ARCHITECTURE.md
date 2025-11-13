@@ -295,3 +295,26 @@ Developer
 │  • Query plan optimization              │
 └─────────────────────────────────────────┘
 ```
+
+  1. Admin Account
+
+  - Email: admin@tutorhub.com
+  - Password: admin123
+  - Role: Administrator
+  - Access: Full admin dashboard with user management, analytics, etc.
+
+  2. Student Account
+
+  - Email: john@example.com
+  - Password: student123
+  - Role: Student
+  - Name: John Smith
+  - Access: Student dashboard to find tutors, book lessons, messages
+
+  3. Tutor Account
+
+  - Email: sarah@example.com
+  - Password: tutor123
+  - Role: Tutor
+  - Name: Sarah Johnson
+  - Access: Tutor dashboard to manage schedule, students, earnings, reviews

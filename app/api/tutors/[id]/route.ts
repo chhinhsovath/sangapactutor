@@ -9,7 +9,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const tutorId = parseInt(params.id);
+    const { id: idStr } = await params;
+    const tutorId = parseInt(idStr);
     const tutor = await db.query.tutors.findFirst({
       where: eq(tutors.id, tutorId),
       with: {
@@ -34,7 +35,8 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const tutorId = parseInt(params.id);
+    const { id: idStr } = await params;
+    const tutorId = parseInt(idStr);
     const body = await request.json();
 
     const updatedTutor = await db
@@ -60,7 +62,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const tutorId = parseInt(params.id);
+    const { id: idStr } = await params;
+    const tutorId = parseInt(idStr);
 
     const deletedTutor = await db
       .delete(tutors)

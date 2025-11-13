@@ -9,7 +9,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const adjustmentId = parseInt(params.id);
+    const { id: idStr } = await params;
+    const adjustmentId = parseInt(idStr);
 
     const deletedAdjustment = await db
       .delete(earningsAdjustments)
