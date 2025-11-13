@@ -5,6 +5,7 @@ import { Layout, Menu, Avatar, Dropdown, Typography, Space, App } from 'antd';
 import {
   DashboardOutlined,
   CalendarOutlined,
+  ClockCircleOutlined,
   MessageOutlined,
   UserOutlined,
   SettingOutlined,
@@ -16,6 +17,7 @@ import {
   DollarOutlined,
   GlobalOutlined,
   TagsOutlined,
+  IdcardOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -83,6 +85,11 @@ function DashboardContent({ children, role, user }: DashboardLayoutProps) {
           icon: <UserOutlined />,
           label: <Link href={`${basePrefix}/profile`}>{t('student.profile')}</Link>,
         },
+        {
+          key: `${basePrefix}/reviews`,
+          icon: <StarOutlined />,
+          label: <Link href={`${basePrefix}/reviews`}>{t('student.reviews')}</Link>,
+        },
       ];
     }
 
@@ -97,6 +104,11 @@ function DashboardContent({ children, role, user }: DashboardLayoutProps) {
           key: `${basePrefix}/schedule`,
           icon: <CalendarOutlined />,
           label: <Link href={`${basePrefix}/schedule`}>{t('tutor.schedule')}</Link>,
+        },
+        {
+          key: `${basePrefix}/availability`,
+          icon: <ClockCircleOutlined />,
+          label: <Link href={`${basePrefix}/availability`}>Availability</Link>,
         },
         {
           key: `${basePrefix}/students`,
@@ -122,6 +134,11 @@ function DashboardContent({ children, role, user }: DashboardLayoutProps) {
           key: `${basePrefix}/profile`,
           icon: <UserOutlined />,
           label: <Link href={`${basePrefix}/profile`}>{t('tutor.profile')}</Link>,
+        },
+        {
+          key: `${basePrefix}/tutor-profile`,
+          icon: <IdcardOutlined />,
+          label: <Link href={`${basePrefix}/tutor-profile`}>Tutor Profile</Link>,
         },
       ];
     }
@@ -162,6 +179,11 @@ function DashboardContent({ children, role, user }: DashboardLayoutProps) {
         key: `${basePrefix}/reviews`,
         icon: <StarOutlined />,
         label: <Link href={`${basePrefix}/reviews`}>{t('admin.reviews')}</Link>,
+      },
+      {
+        key: `${basePrefix}/earnings`,
+        icon: <DollarOutlined />,
+        label: <Link href={`${basePrefix}/earnings`}>Earnings</Link>,
       },
       {
         key: `${basePrefix}/analytics`,

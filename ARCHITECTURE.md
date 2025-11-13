@@ -318,3 +318,22 @@ Developer
   - Role: Tutor
   - Name: Sarah Johnson
   - Access: Tutor dashboard to manage schedule, students, earnings, reviews
+
+
+  Critical (Core User Flow):
+Student: Create Booking - Most important missing feature
+Student: Create Review - Essential for platform credibility
+Tutor: Edit Tutor Profile - Tutors need to manage their own data
+
+High Priority:
+Student/Tutor: Send Messages - Complete the messaging system
+Tutor: Respond to Reviews - Engagement feature
+Public: Book from Tutor Page - Improve conversion
+
+Medium Priority:
+Admin: Earnings Adjustments UI - Financial management
+Tutor: Availability Management - Scheduling control
+
+
+
+As you know there are lot of well education students from Phnom Penh city across different education institutions with very high demand skill like English, Accountant, Fiance, Marketing, Banking etc. I know that each student during their studying there will be score credit like attendance, quiz, exams, if we design this platform for each education instition to require their students to provide like 3 to 6 times per one accademic year to provide support or make social connection with remote students under another education institutions and in return they will get few credits. So it become multi-purpose of platform as SaaS with tutor finder features. So tell me how you design and improve this platform.

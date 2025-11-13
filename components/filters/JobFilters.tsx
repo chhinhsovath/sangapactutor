@@ -3,6 +3,7 @@
 import { Select, Button, Space, Slider, Typography } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const { Text } = Typography;
 
@@ -21,13 +22,13 @@ interface TutorFiltersProps {
 }
 
 const specializations = [
-  { label: 'All Specializations', value: 'all' },
-  { label: 'Conversational', value: 'Conversational' },
-  { label: 'Business', value: 'Business' },
-  { label: 'Test Preparation', value: 'Test Preparation' },
-  { label: 'Academic', value: 'Academic' },
-  { label: 'Kids & Teens', value: 'Kids & Teens' },
-  { label: 'Job Interview', value: 'Job Interview' },
+  { label: '', value: 'all', key: 'allSpecializations' },
+  { label: '', value: 'Conversational', key: 'conversational' },
+  { label: '', value: 'Business', key: 'business' },
+  { label: '', value: 'Test Preparation', key: 'testPreparation' },
+  { label: '', value: 'Academic', key: 'academic' },
+  { label: '', value: 'Kids & Teens', key: 'kidsTeens' },
+  { label: '', value: 'Job Interview', key: 'jobInterview' },
 ];
 
 export default function TutorFilters({
@@ -43,15 +44,22 @@ export default function TutorFilters({
   onPriceChange,
   onReset,
 }: TutorFiltersProps) {
+  const { t } = useLanguage();
+  
   const subjectOptions = [
-    { label: 'All Subjects', value: 'all' },
+    { label: t('home.allSubjects'), value: 'all' },
     ...subjects.map((subj) => ({ label: subj.name, value: subj.slug })),
   ];
 
   const countryOptions = [
-    { label: 'All Countries', value: 'all' },
+    { label: t('home.allCountries'), value: 'all' },
     ...countries.map((ctry) => ({ label: ctry.name, value: ctry.code })),
   ];
+
+  const specializationOptions = specializations.map((spec) => ({
+    label: spec.key ? t(`home.${spec.key}`) : spec.label,
+    value: spec.value,
+  }));
 
   const hasActiveFilters = 
     selectedSubject !== 'all' || 
@@ -68,7 +76,7 @@ export default function TutorFilters({
           value={selectedSubject}
           onChange={onSubjectChange}
           options={subjectOptions}
-          placeholder="Select subject"
+          placeholder={t('home.selectSubject')}
         />
         
         <Select
@@ -76,26 +84,26 @@ export default function TutorFilters({
           value={selectedCountry}
           onChange={onCountryChange}
           options={countryOptions}
-          placeholder="Select country"
+          placeholder={t('home.selectCountry')}
         />
         
         <Select
           style={{ minWidth: 200 }}
           value={selectedSpecialization}
           onChange={onSpecializationChange}
-          options={specializations}
-          placeholder="Select specialization"
+          options={specializationOptions}
+          placeholder={t('home.selectSpecialization')}
         />
 
         {hasActiveFilters && (
           <Button icon={<ReloadOutlined />} onClick={onReset}>
-            Reset Filters
+            {t('home.resetFilters')}
           </Button>
         )}
       </Space>
 
       <div style={{ maxWidth: 400 }}>
-        <Text strong style={{ display: 'block', marginBottom: 8 }}>Price Range (per hour)</Text>
+        <Text strong style={{ display: 'block', marginBottom: 8 }}>{t('home.priceRange')}</Text>
         <Slider
           range
           min={0}

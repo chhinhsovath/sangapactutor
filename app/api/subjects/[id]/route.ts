@@ -3,6 +3,34 @@ import { db } from '@/lib/db';
 import { subjects } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 
+// GET single subject by ID or slug
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: identifier } = await params;
+    
+    // Check if identifier is a number (ID) or string (slug)
+    const isNumeric = /^\d+$/.test(identifier);
+    
+    const subject = await db.query.subjects.findFirst({
+      where: isNumeric 
+        ? eq(subjects.id, parseInt(identifier))
+        : eq(subjects.slug, identifier),
+    });
+
+    if (!subject) {
+      return NextResponse.json({ error: 'Subject not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(subject);
+  } catch (error) {
+    console.error('Error fetching subject:', error);
+    return NextResponse.json({ error: 'Failed to fetch subject' }, { status: 500 });
+  }
+}
+
 // UPDATE subject
 export async function PUT(
   request: NextRequest,

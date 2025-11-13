@@ -9,9 +9,10 @@ const { Title, Text } = Typography;
 
 interface TutorListProps {
   tutors: TutorWithDetails[];
+  onBookLesson?: (tutor: TutorWithDetails) => void;
 }
 
-export default function TutorList({ tutors }: TutorListProps) {
+export default function TutorList({ tutors, onBookLesson }: TutorListProps) {
   const { t } = useLanguage();
   
   if (tutors.length === 0) {
@@ -33,7 +34,7 @@ export default function TutorList({ tutors }: TutorListProps) {
       <Row gutter={[0, 0]}>
         <Col span={24}>
           {tutors.map((tutor) => (
-            <TutorCard key={tutor.id} tutor={tutor} />
+            <TutorCard key={tutor.id} tutor={tutor} onBookLesson={onBookLesson} />
           ))}
         </Col>
       </Row>

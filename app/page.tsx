@@ -130,27 +130,28 @@ export default function Home() {
           flexWrap: 'wrap'
         }}>
           {[
-            { icon: <CalculatorOutlined />, name: t('home.subjects.mathematics'), color: '#52c41a' },
-            { icon: <BookOutlined />, name: t('home.subjects.english'), color: '#1890ff' },
-            { icon: <CodeOutlined />, name: t('home.subjects.programming'), color: '#fa8c16' },
-            { icon: <ExperimentOutlined />, name: t('home.subjects.science'), color: '#722ed1' },
-            { icon: <StarOutlined />, name: t('home.subjects.music'), color: '#faad14' },
-            { icon: <GlobalOutlined />, name: t('home.subjects.languages'), color: '#13c2c2' },
-            { icon: <BulbOutlined />, name: t('home.subjects.business'), color: '#eb2f96' },
+            { icon: <CalculatorOutlined />, name: t('home.subjects.mathematics'), color: '#52c41a', slug: 'mathematics' },
+            { icon: <BookOutlined />, name: t('home.subjects.english'), color: '#1890ff', slug: 'english' },
+            { icon: <CodeOutlined />, name: t('home.subjects.programming'), color: '#fa8c16', slug: 'programming' },
+            { icon: <ExperimentOutlined />, name: t('home.subjects.science'), color: '#722ed1', slug: 'science' },
+            { icon: <StarOutlined />, name: t('home.subjects.music'), color: '#faad14', slug: 'music' },
+            { icon: <GlobalOutlined />, name: t('home.subjects.languages'), color: '#13c2c2', slug: 'languages' },
+            { icon: <BulbOutlined />, name: t('home.subjects.business'), color: '#eb2f96', slug: 'business' },
           ].map((subject, idx) => (
-            <Button
-              key={idx}
-              size="large"
-              style={{ 
-                borderRadius: 24, 
-                border: `2px solid ${subject.color}`,
-                color: subject.color,
-                whiteSpace: 'nowrap'
-              }}
-              icon={subject.icon}
-            >
-              {subject.name}
-            </Button>
+            <Link key={idx} href={`/subjects/${subject.slug}`} style={{ textDecoration: 'none' }}>
+              <Button
+                size="large"
+                style={{ 
+                  borderRadius: 24, 
+                  border: `2px solid ${subject.color}`,
+                  color: subject.color,
+                  whiteSpace: 'nowrap'
+                }}
+                icon={subject.icon}
+              >
+                {subject.name}
+              </Button>
+            </Link>
           ))}
         </div>
       </div>
@@ -211,7 +212,7 @@ export default function Home() {
                                   {tutor.firstName}
                                 </Title>
                                 <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13 }}>
-                                  {tutor.country?.name} (online)
+                                  {tutor.country?.name} ({t('home.online')})
                                 </Text>
                               </div>
                             </div>
@@ -228,10 +229,10 @@ export default function Home() {
                           </Text>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <Text strong style={{ fontSize: 18, color: '#1890ff' }}>
-                              ${tutor.hourlyRate}/h
+                              ${tutor.hourlyRate}{t('home.perHour')}
                             </Text>
                             {tutor.isVerified && (
-                              <Tag color="purple">⭐ Ambassador</Tag>
+                              <Tag color="purple">⭐ {t('home.ambassador')}</Tag>
                             )}
                           </div>
                         </Card>
@@ -256,8 +257,9 @@ export default function Home() {
               <Row>
                 <Col xs={24} md={12}>
                   <div style={{ padding: '48px' }}>
-                    <Title level={2} style={{ marginBottom: 16 }}>You can become a great tutor too!</Title>
-                    <Text style={{ fontSize: 16, display: 'block', marginBottom: 24 }}> Share your knowledge, live from your passion and be your own boss
+                    <Title level={2} style={{ marginBottom: 16 }}>{t('home.becomeTutorTitle')}</Title>
+                    <Text style={{ fontSize: 16, display: 'block', marginBottom: 24 }}>
+                      {t('home.becomeTutorSubtitle')}
                     </Text>
                     <Button
                       type="primary"
@@ -265,7 +267,7 @@ export default function Home() {
                       style={{ background: '#000', borderColor: '#000', borderRadius: 24, height: 48, paddingLeft: 32, paddingRight: 32 }}
                     >
                       <Link href="/become-tutor" style={{ color: 'white', textDecoration: 'none' }}>
-                        Find out more <RightOutlined />
+                        {t('home.findOutMore')} <RightOutlined />
                       </Link>
                     </Button>
                   </div>
@@ -405,9 +407,9 @@ export default function Home() {
       <Footer style={{ textAlign: 'center', background: '#001529', color: 'rgba(255,255,255,0.65)' }}>
         <Space split="·">
           <Text style={{ color: 'rgba(255,255,255,0.65)' }}>© 2024 {companyName}</Text>
-          <Link href="/privacy" style={{ color: 'rgba(255,255,255,0.65)' }}>Privacy Policy</Link>
-          <Link href="/terms" style={{ color: 'rgba(255,255,255,0.65)' }}>Terms of Service</Link>
-          <Link href="/help" style={{ color: 'rgba(255,255,255,0.65)' }}>Help Center</Link>
+          <Link href="/privacy" style={{ color: 'rgba(255,255,255,0.65)' }}>{t('home.privacyPolicy')}</Link>
+          <Link href="/terms" style={{ color: 'rgba(255,255,255,0.65)' }}>{t('home.termsOfService')}</Link>
+          <Link href="/help" style={{ color: 'rgba(255,255,255,0.65)' }}>{t('home.helpCenter')}</Link>
         </Space>
       </Footer>
     </Layout>

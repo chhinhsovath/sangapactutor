@@ -10,11 +10,12 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    
+
     const user = await db.query.users.findFirst({
       where: eq(users.id, parseInt(id)),
       with: {
         tutor: true,
+        institution: true, // Include institution data for credit tracker
       },
     });
 

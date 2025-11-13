@@ -11,7 +11,8 @@
     "db:migrate": "tsx lib/db/migrate.ts",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "tsx lib/db/seed.ts"
+    "db:seed": "tsx lib/db/seed.ts",
+    "db:seed:institutions": "tsx lib/db/seed-institutions.ts"
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
