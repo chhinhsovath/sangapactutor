@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Card, Space, Tag, Typography, Spin } from 'antd';
-import { DollarOutlined, PlusOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons';
+import { PlusOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import dayjs from 'dayjs';
 import { useSession } from 'next-auth/react';
@@ -221,21 +221,22 @@ export default function TutorEarningsPage() {
 
   return (
     <DashboardLayout role="tutor" user={user}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Title level={2}>Earnings</Title>
-        <Space>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setAdjustmentModalVisible(true)}
-          >
-            Add Adjustment
-          </Button>
-          <Button icon={<DownloadOutlined />} onClick={handleExport}>
-            Export CSV
-          </Button>
-        </Space>
-      </div>
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Title level={2}>Earnings</Title>
+          <Space>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setAdjustmentModalVisible(true)}
+            >
+              Add Adjustment
+            </Button>
+            <Button icon={<DownloadOutlined />} onClick={handleExport}>
+              Export CSV
+            </Button>
+          </Space>
+        </div>
 
         {/* Summary Cards */}
         {earningsData && (
