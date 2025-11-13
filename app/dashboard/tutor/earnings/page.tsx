@@ -1,14 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Card, Space, Tag } from 'antd';
+import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Card, Space, Tag, Typography, Spin } from 'antd';
 import { DollarOutlined, PlusOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import dayjs from 'dayjs';
+import { useSession } from 'next-auth/react';
 
 const { TextArea } = Input;
+const { Title } = Typography;
 
 export default function TutorEarningsPage() {
+  const { data: session, status } = useSession();
   const [earningsData, setEarningsData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [adjustmentModalVisible, setAdjustmentModalVisible] = useState(false);
@@ -113,7 +116,7 @@ export default function TutorEarningsPage() {
     a.download = `earnings-${dayjs().format('YYYY-MM-DD')}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
-    message.success(t('tutor.earningsPage.exportedSuccessfully'));
+    message.success('Earnings exported successfully');
   };
 
   if (status === 'loading' || loading) {
@@ -138,14 +141,14 @@ export default function TutorEarningsPage() {
 
   const bookingColumns = [
     {
-      title: t('common.date'),
+      title: 'Date',
       dataIndex: 'scheduledAt',
       key: 'scheduledAt',
       render: (date: string) => dayjs(date).format('MMM DD, YYYY'),
       sorter: (a: any, b: any) => dayjs(a.scheduledAt).unix() - dayjs(b.scheduledAt).unix(),
     },
     {
-      title: t('tutor.studentsPage.name'),
+      title: 'Student Name',
       key: 'student',
       render: (_: any, record: any) => {
         const student = record.student;
@@ -153,13 +156,13 @@ export default function TutorEarningsPage() {
       },
     },
     {
-      title: t('tutor.earningsPage.duration'),
+      title: 'Duration',
       dataIndex: 'duration',
       key: 'duration',
       render: (duration: number) => `${duration} min`,
     },
     {
-      title: t('tutor.earningsPage.amount'),
+      title: 'Amount',
       dataIndex: 'price',
       key: 'price',
       render: (price: string) => (
@@ -170,28 +173,28 @@ export default function TutorEarningsPage() {
 
   const adjustmentColumns = [
     {
-      title: t('common.date'),
+      title: 'Date',
       dataIndex: 'createdAt',
       key: 'createdAt',
       render: (date: string) => dayjs(date).format('MMM DD, YYYY'),
     },
     {
-      title: t('tutor.earningsPage.type'),
+      title: 'Type',
       dataIndex: 'type',
       key: 'type',
       render: (type: string) => (
         <Tag color={type === 'bonus' ? 'green' : 'red'}>
-          {t(`tutor.earningsPage.${type}`)}
+          {type === 'bonus' ? 'Bonus' : 'Deduction'}
         </Tag>
       ),
     },
     {
-      title: t('tutor.earningsPage.reason'),
+      title: 'Reason',
       dataIndex: 'reason',
       key: 'reason',
     },
     {
-      title: t('tutor.earningsPage.amount'),
+      title: 'Amount',
       dataIndex: 'amount',
       key: 'amount',
       render: (amount: string, record: any) => (
@@ -201,7 +204,7 @@ export default function TutorEarningsPage() {
       ),
     },
     {
-      title: t('common.actions'),
+      title: 'Actions',
       key: 'actions',
       render: (_: any, record: any) => (
         <Button
@@ -210,7 +213,7 @@ export default function TutorEarningsPage() {
           icon={<DeleteOutlined />}
           onClick={() => handleDeleteAdjustment(record.id)}
         >
-          {t('common.delete')}
+          Delete
         </Button>
       ),
     },
@@ -219,17 +222,17 @@ export default function TutorEarningsPage() {
   return (
     <DashboardLayout role="tutor" user={user}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Title level={2}>{t('tutor.earningsPage.title')}</Title>
+        <Title level={2}>Earnings</Title>
         <Space>
           <Button
             type="primary"
             icon={<PlusOutlined />}
             onClick={() => setAdjustmentModalVisible(true)}
           >
-            {t('tutor.earningsPage.addAdjustment')}
+            Add Adjustment
           </Button>
           <Button icon={<DownloadOutlined />} onClick={handleExport}>
-            {t('tutor.earningsPage.exportCsv')}
+            Export CSV
           </Button>
         </Space>
       </div>
@@ -240,7 +243,7 @@ export default function TutorEarningsPage() {
             <Card>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>
-                  {t('tutor.earningsPage.totalEarnings')}
+                  Total Earnings
                 </div>
                 <div style={{ fontSize: '36px', fontWeight: 'bold', color: '#1890ff' }}>
                   ${earningsData.totalEarnings.toFixed(2)}
@@ -251,13 +254,13 @@ export default function TutorEarningsPage() {
             <Card>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>
-                  {t('tutor.earningsPage.fromLessons')}
+                  From Lessons
                 </div>
                 <div style={{ fontSize: '36px', fontWeight: 'bold', color: '#52c41a' }}>
                   ${earningsData.totalFromBookings.toFixed(2)}
                 </div>
                 <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-                  {t('tutor.earningsPage.completedLessons', { count: earningsData.bookings.length })}
+                  {earningsData.bookings.length} completed lessons
                 </div>
               </div>
             </Card>
@@ -265,13 +268,13 @@ export default function TutorEarningsPage() {
             <Card>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>
-                  {t('tutor.earningsPage.adjustments')}
+                  Adjustments
                 </div>
                 <div style={{ fontSize: '36px', fontWeight: 'bold', color: earningsData.totalAdjustments >= 0 ? '#52c41a' : '#ff4d4f' }}>
                   {earningsData.totalAdjustments >= 0 ? '+' : ''}${earningsData.totalAdjustments.toFixed(2)}
                 </div>
                 <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-                  {earningsData.adjustments.length} {t('tutor.earningsPage.adjustments').toLowerCase()}
+                  {earningsData.adjustments.length} adjustments
                 </div>
               </div>
             </Card>
@@ -280,7 +283,7 @@ export default function TutorEarningsPage() {
 
         {/* Lesson Earnings */}
         <div style={{ marginTop: '32px' }}>
-          <Title level={3}>{t('tutor.earningsPage.lessonEarnings')}</Title>
+          <Title level={3}>Lesson Earnings</Title>
           <Table
             columns={bookingColumns}
             dataSource={earningsData?.bookings || []}
@@ -292,7 +295,7 @@ export default function TutorEarningsPage() {
 
         {/* Adjustments */}
         <div style={{ marginTop: '32px' }}>
-          <Title level={3}>{t('tutor.earningsPage.adjustments')}</Title>
+          <Title level={3}>Adjustments</Title>
           <Table
             columns={adjustmentColumns}
             dataSource={earningsData?.adjustments || []}
@@ -304,7 +307,7 @@ export default function TutorEarningsPage() {
 
         {/* Add Adjustment Modal */}
         <Modal
-          title={t('tutor.earningsPage.addEarningsAdjustment')}
+          title="Add Earnings Adjustment"
           open={adjustmentModalVisible}
           onCancel={() => {
             setAdjustmentModalVisible(false);
@@ -315,34 +318,34 @@ export default function TutorEarningsPage() {
           <Form form={form} layout="vertical" onFinish={handleAddAdjustment}>
             <Form.Item
               name="type"
-              label={t('tutor.earningsPage.type')}
-              rules={[{ required: true, message: t('errors.required') }]}
+              label="Type"
+              rules={[{ required: true, message: 'This field is required' }]}
             >
               <Select>
-                <Select.Option value="bonus">{t('tutor.earningsPage.bonus')}</Select.Option>
-                <Select.Option value="deduction">{t('tutor.earningsPage.deduction')}</Select.Option>
+                <Select.Option value="bonus">Bonus</Select.Option>
+                <Select.Option value="deduction">Deduction</Select.Option>
               </Select>
             </Form.Item>
             <Form.Item
               name="amount"
-              label={`${t('tutor.earningsPage.amount')} ($)`}
-              rules={[{ required: true, message: t('errors.required') }]}
+              label="Amount ($)"
+              rules={[{ required: true, message: 'This field is required' }]}
             >
               <InputNumber min={0.01} step={0.01} style={{ width: '100%' }} />
             </Form.Item>
             <Form.Item
               name="reason"
-              label={t('tutor.earningsPage.reason')}
-              rules={[{ required: true, message: t('errors.required') }]}
+              label="Reason"
+              rules={[{ required: true, message: 'This field is required' }]}
             >
-              <TextArea rows={3} placeholder={t('tutor.earningsPage.reasonPlaceholder')} />
+              <TextArea rows={3} placeholder="Enter reason for adjustment" />
             </Form.Item>
             <Form.Item>
               <Space>
                 <Button type="primary" htmlType="submit">
-                  {t('tutor.earningsPage.addAdjustment')}
+                  Add Adjustment
                 </Button>
-                <Button onClick={() => setAdjustmentModalVisible(false)}>{t('common.cancel')}</Button>
+                <Button onClick={() => setAdjustmentModalVisible(false)}>Cancel</Button>
               </Space>
             </Form.Item>
           </Form>
