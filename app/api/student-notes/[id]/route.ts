@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm';
 // UPDATE student note
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const noteId = parseInt(params.id);
@@ -32,7 +32,7 @@ export async function PUT(
 // DELETE student note
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const noteId = parseInt(params.id);

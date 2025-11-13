@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm';
 // GET single tutor
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const tutorId = parseInt(params.id);
@@ -31,7 +31,7 @@ export async function GET(
 // UPDATE tutor
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const tutorId = parseInt(params.id);
@@ -57,7 +57,7 @@ export async function PUT(
 // DELETE tutor
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const tutorId = parseInt(params.id);

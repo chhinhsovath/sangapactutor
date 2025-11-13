@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm';
 // DELETE earnings adjustment
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const adjustmentId = parseInt(params.id);
