@@ -304,26 +304,33 @@ async function seedBookingsAndCredits(usersList: any[], subjectsList: any[]) {
     }).returning();
   }
 
-  // Create a dummy tutor for credit-eligible bookings
+  // Get or create a dummy tutor for credit-eligible bookings
   const math = subjectsList.find(s => s.slug === 'mathematics') || subjectsList[0];
-  const [dummyTutor] = await db.insert(tutors).values({
-    firstName: 'Peer',
-    lastName: 'Tutor',
-    slug: 'peer-tutor-system',
-    subjectId: math.id,
-    countryId: existingCountry.id,
-    specialization: 'Academic',
-    level: 'Advanced',
-    hourlyRate: '0',
-    rating: '0',
-    totalReviews: 0,
-    totalLessons: 0,
-    yearsExperience: 0,
-    bio: 'Placeholder for peer tutoring system',
-    isVerified: false,
-  }).returning();
 
-  console.log('  ✓ Created dummy tutor for credit bookings');
+  let [dummyTutor] = await db.select().from(tutors)
+    .where(eq(tutors.slug, 'peer-tutor-system')).limit(1);
+
+  if (!dummyTutor) {
+    [dummyTutor] = await db.insert(tutors).values({
+      firstName: 'Peer',
+      lastName: 'Tutor',
+      slug: 'peer-tutor-system',
+      subjectId: math.id,
+      countryId: existingCountry.id,
+      specialization: 'Academic',
+      level: 'Advanced',
+      hourlyRate: '0',
+      rating: '0',
+      totalReviews: 0,
+      totalLessons: 0,
+      yearsExperience: 0,
+      bio: 'Placeholder for peer tutoring system',
+      isVerified: false,
+    }).returning();
+    console.log('  ✓ Created dummy tutor for credit bookings');
+  } else {
+    console.log('  ℹ️  Found existing dummy tutor, reusing');
+  }
 
   // Create completed bookings
   for (let i = 0; i < 10; i++) {
