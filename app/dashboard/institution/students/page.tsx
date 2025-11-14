@@ -1,9 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Table, Card, Button, Space, Tag, Input, Select, Modal, Form, message, Typography } from 'antd';
+import { Table, Card, Button, Space, Tag, Input, Select, Modal, Form, message, Typography, App } from 'antd';
 import { UserAddOutlined, SearchOutlined, DeleteOutlined, TrophyOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/contexts/LanguageContext';
+import DashboardLayout from '@/components/dashboard/DashboardLayout';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -22,6 +26,10 @@ interface EnrolledStudent {
 }
 
 export default function EnrolledStudentsPage() {
+  const { t } = useLanguage();
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const { message: msg } = App.useApp();
   const [students, setStudents] = useState<EnrolledStudent[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
@@ -29,14 +37,19 @@ export default function EnrolledStudentsPage() {
   const [enrollModalVisible, setEnrollModalVisible] = useState(false);
   const [form] = Form.useForm();
 
-  // TODO: Get from authenticated user's session
-  const institutionId = 1;
-
   useEffect(() => {
-    fetchStudents();
-  }, [roleFilter]);
+    if (status === 'unauthenticated') {
+      router.push('/login');
+      return;
+    }
+
+    if (status === 'authenticated' && session?.user?.institutionId) {
+      fetchStudents();
+    }
+  }, [status, session, roleFilter]);
 
   const fetchStudents = async () => {
+    if (!session?.user?.institutionId) return;
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -44,11 +57,11 @@ export default function EnrolledStudentsPage() {
         params.append('role', roleFilter);
       }
 
-      const response = await fetch(`/api/institutions/${institutionId}/enroll?${params.toString()}`);
+      const response = await fetch(`/api/institutions/${session.user.institutionId}/enroll?${params.toString()}`);
       const data = await response.json();
       setStudents(data);
     } catch (error) {
-      message.error('Failed to fetch students');
+      msg.error(t('errors.fetchFailed') || 'Failed to fetch students');
       console.error('Error fetching students:', error);
     } finally {
       setLoading(false);
@@ -56,49 +69,53 @@ export default function EnrolledStudentsPage() {
   };
 
   const handleEnroll = async (values: any) => {
+    if (!session?.user?.institutionId) return;
+
     try {
-      const response = await fetch(`/api/institutions/${institutionId}/enroll`, {
+      const response = await fetch(`/api/institutions/${session.user.institutionId}/enroll`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(values),
       });
 
       if (response.ok) {
-        message.success('Student enrolled successfully');
+        msg.success(t('institution.studentEnrolled') || 'Student enrolled successfully');
         setEnrollModalVisible(false);
         form.resetFields();
         fetchStudents();
       } else {
         const error = await response.json();
-        message.error(error.error || 'Failed to enroll student');
+        msg.error(error.error || t('institution.enrollFailed') || 'Failed to enroll student');
       }
     } catch (error) {
-      message.error('Failed to enroll student');
+      msg.error(t('institution.enrollFailed') || 'Failed to enroll student');
       console.error('Error enrolling student:', error);
     }
   };
 
   const handleUnenroll = async (userId: number, name: string) => {
+    if (!session?.user?.institutionId) return;
+
     Modal.confirm({
-      title: 'Unenroll Student',
-      content: `Are you sure you want to unenroll ${name}?`,
-      okText: 'Yes, Unenroll',
+      title: `${t('institution.unenrollStudent') || 'Unenroll Student'} / Unenroll Student`,
+      content: `${t('institution.confirmUnenroll') || 'Are you sure you want to unenroll'} ${name}?`,
+      okText: `${t('common.yes') || 'Yes'} / Yes, Unenroll`,
       okType: 'danger',
       onOk: async () => {
         try {
-          const response = await fetch(`/api/institutions/${institutionId}/enroll/${userId}`, {
+          const response = await fetch(`/api/institutions/${session.user.institutionId}/enroll/${userId}`, {
             method: 'DELETE',
           });
 
           if (response.ok) {
-            message.success('Student unenrolled successfully');
+            msg.success(t('institution.studentUnenrolled') || 'Student unenrolled successfully');
             fetchStudents();
           } else {
             const error = await response.json();
-            message.error(error.error || 'Failed to unenroll student');
+            msg.error(error.error || t('institution.unenrollFailed') || 'Failed to unenroll student');
           }
         } catch (error) {
-          message.error('Failed to unenroll student');
+          msg.error(t('institution.unenrollFailed') || 'Failed to unenroll student');
           console.error('Error unenrolling student:', error);
         }
       },
@@ -107,13 +124,13 @@ export default function EnrolledStudentsPage() {
 
   const columns: ColumnsType<EnrolledStudent> = [
     {
-      title: 'Student ID',
+      title: `${t('institution.studentId') || 'Student ID'} / Student ID`,
       dataIndex: 'studentId',
       key: 'studentId',
       render: (id) => id || '-',
     },
     {
-      title: 'Name',
+      title: `${t('common.name') || 'Name'} / Name`,
       key: 'name',
       render: (_, record) => `${record.firstName} ${record.lastName}`,
       filteredValue: searchText ? [searchText] : null,
@@ -123,12 +140,12 @@ export default function EnrolledStudentsPage() {
       },
     },
     {
-      title: 'Email',
+      title: `${t('auth.email') || 'Email'} / Email`,
       dataIndex: 'email',
       key: 'email',
     },
     {
-      title: 'Role',
+      title: `${t('common.role') || 'Role'} / Role`,
       dataIndex: 'role',
       key: 'role',
       render: (role) => {
@@ -142,7 +159,7 @@ export default function EnrolledStudentsPage() {
       },
     },
     {
-      title: 'Credit Balance',
+      title: `${t('institution.creditBalance') || 'Credit Balance'} / Credit Balance`,
       dataIndex: 'creditBalance',
       key: 'creditBalance',
       render: (balance) => (
@@ -154,21 +171,23 @@ export default function EnrolledStudentsPage() {
       sorter: (a, b) => parseFloat(a.creditBalance) - parseFloat(b.creditBalance),
     },
     {
-      title: 'Academic Year',
+      title: `${t('institution.academicYear') || 'Academic Year'} / Academic Year`,
       dataIndex: 'academicYear',
       key: 'academicYear',
       render: (year) => year || '-',
     },
     {
-      title: 'Status',
+      title: `${t('common.status') || 'Status'} / Status`,
       dataIndex: 'isActive',
       key: 'isActive',
       render: (isActive) => (
-        <Tag color={isActive ? 'green' : 'red'}>{isActive ? 'Active' : 'Inactive'}</Tag>
+        <Tag color={isActive ? 'green' : 'red'}>
+          {isActive ? `${t('common.active') || 'Active'} / Active` : `${t('common.inactive') || 'Inactive'} / Inactive`}
+        </Tag>
       ),
     },
     {
-      title: 'Actions',
+      title: `${t('common.actions') || 'Actions'} / Actions`,
       key: 'actions',
       render: (_, record) => (
         <Button
@@ -177,31 +196,55 @@ export default function EnrolledStudentsPage() {
           icon={<DeleteOutlined />}
           onClick={() => handleUnenroll(record.id, `${record.firstName} ${record.lastName}`)}
         >
-          Unenroll
+          {t('institution.unenroll') || 'Unenroll'} / Unenroll
         </Button>
       ),
     },
   ];
 
+  if (status === 'loading' || loading) {
+    return (
+      <App>
+        <DashboardLayout role={session?.user?.role as any || 'faculty_coordinator'} user={{
+          name: session?.user?.name || '',
+          email: session?.user?.email || '',
+          avatar: session?.user?.avatar,
+        }}>
+          <div style={{ padding: '24px', textAlign: 'center' }}>
+            <Typography.Text>{t('common.loading') || 'Loading...'}</Typography.Text>
+          </div>
+        </DashboardLayout>
+      </App>
+    );
+  }
+
+  const user = {
+    name: session?.user?.name || '',
+    email: session?.user?.email || '',
+    avatar: session?.user?.avatar,
+  };
+
   return (
+    <App>
+      <DashboardLayout role={session?.user?.role as any || 'faculty_coordinator'} user={user}>
     <div style={{ padding: '24px' }}>
       <Card>
         <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Title level={3} style={{ margin: 0 }}>
-            Enrolled Students
+            {t('institution.enrolledStudents') || 'Enrolled Students'} / Enrolled Students
           </Title>
           <Button
             type="primary"
             icon={<UserAddOutlined />}
             onClick={() => setEnrollModalVisible(true)}
           >
-            Enroll Student
+            {t('institution.enrollStudent') || 'Enroll Student'} / Enroll Student
           </Button>
         </div>
 
         <Space style={{ marginBottom: 16 }}>
           <Input
-            placeholder="Search by name"
+            placeholder={`${t('common.search') || 'Search'} / Search by name`}
             prefix={<SearchOutlined />}
             onChange={(e) => setSearchText(e.target.value)}
             style={{ width: 200 }}
@@ -211,11 +254,11 @@ export default function EnrolledStudentsPage() {
             onChange={setRoleFilter}
             style={{ width: 200 }}
           >
-            <Option value="all">All Roles</Option>
-            <Option value="student">Student</Option>
-            <Option value="verified_tutor">Verified Tutor</Option>
-            <Option value="mentee">Mentee</Option>
-            <Option value="faculty_coordinator">Faculty Coordinator</Option>
+            <Option value="all">{t('common.allRoles') || 'All Roles'} / All Roles</Option>
+            <Option value="student">{t('student.portal') || 'Student'} / Student</Option>
+            <Option value="verified_tutor">{t('institution.verifiedTutor') || 'Verified Tutor'} / Verified Tutor</Option>
+            <Option value="mentee">{t('institution.mentee') || 'Mentee'} / Mentee</Option>
+            <Option value="faculty_coordinator">{t('institution.facultyCoordinator') || 'Faculty Coordinator'} / Faculty Coordinator</Option>
           </Select>
         </Space>
 
@@ -226,14 +269,14 @@ export default function EnrolledStudentsPage() {
           loading={loading}
           pagination={{
             pageSize: 10,
-            showTotal: (total) => `Total ${total} students`,
+            showTotal: (total) => `${t('common.total') || 'Total'} ${total} ${t('institution.students') || 'students'}`,
           }}
         />
       </Card>
 
       {/* Enroll Student Modal */}
       <Modal
-        title="Enroll Student"
+        title={`${t('institution.enrollStudent') || 'Enroll Student'} / Enroll Student`}
         open={enrollModalVisible}
         onCancel={() => {
           setEnrollModalVisible(false);
@@ -243,24 +286,24 @@ export default function EnrolledStudentsPage() {
       >
         <Form form={form} layout="vertical" onFinish={handleEnroll}>
           <Form.Item
-            label="User ID"
+            label={`${t('institution.userId') || 'User ID'} / User ID`}
             name="userId"
-            rules={[{ required: true, message: 'Please enter user ID' }]}
-            extra="The system user ID of the student to enroll"
+            rules={[{ required: true, message: t('institution.enterUserId') || 'Please enter user ID' }]}
+            extra={t('institution.userIdHelp') || 'The system user ID of the student to enroll'}
           >
             <Input type="number" placeholder="e.g., 123" />
           </Form.Item>
 
           <Form.Item
-            label="Student ID"
+            label={`${t('institution.studentId') || 'Student ID'} / Student ID`}
             name="studentId"
-            extra="Institution's internal student ID (optional)"
+            extra={t('institution.studentIdHelp') || "Institution's internal student ID (optional)"}
           >
             <Input placeholder="e.g., RU-2024-0123" />
           </Form.Item>
 
           <Form.Item
-            label="Academic Year"
+            label={`${t('institution.academicYear') || 'Academic Year'} / Academic Year`}
             name="academicYear"
           >
             <Input placeholder="e.g., 2024-2025" />
@@ -269,18 +312,20 @@ export default function EnrolledStudentsPage() {
           <Form.Item>
             <Space>
               <Button type="primary" htmlType="submit">
-                Enroll
+                {t('institution.enroll') || 'Enroll'} / Enroll
               </Button>
               <Button onClick={() => {
                 setEnrollModalVisible(false);
                 form.resetFields();
               }}>
-                Cancel
+                {t('common.cancel') || 'Cancel'} / Cancel
               </Button>
             </Space>
           </Form.Item>
         </Form>
       </Modal>
     </div>
+      </DashboardLayout>
+    </App>
   );
 }

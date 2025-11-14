@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Timeline, Tag, Typography, Progress, Space, Button, Table, App, Spin } from 'antd';
-import { TrophyOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, PlusOutlined } from '@ant-design/icons';
+import { Card, Row, Col, Statistic, Timeline, Tag, Typography, Progress, Space, Table, App, Spin } from 'antd';
+import { TrophyOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
@@ -21,9 +21,13 @@ interface CreditTransaction {
   reviewedAt?: string;
   creditedAt?: string;
   reviewNotes?: string;
+  student?: {
+    firstName: string;
+    lastName: string;
+  };
 }
 
-interface UserData {
+interface TutorData {
   creditBalance: string;
   institutionId: number;
   academicYear: string;
@@ -35,13 +39,13 @@ interface InstitutionData {
   creditValuePerSession: string;
 }
 
-export default function StudentCreditsPage() {
+export default function TutorCreditsPage() {
   const { t } = useLanguage();
   const { data: session, status } = useSession();
   const router = useRouter();
   const { message } = App.useApp();
   const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
-  const [userData, setUserData] = useState<UserData | null>(null);
+  const [tutorData, setTutorData] = useState<TutorData | null>(null);
   const [institutionData, setInstitutionData] = useState<InstitutionData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -62,16 +66,16 @@ export default function StudentCreditsPage() {
       // Fetch user data
       const userResponse = await fetch(`/api/users/${session?.user?.id}`);
       const user = await userResponse.json();
-      setUserData(user);
+      setTutorData(user);
 
-      // Fetch institution data
+      // Fetch institution data if tutor has institution
       if (user.institutionId) {
         const instResponse = await fetch(`/api/institutions/${user.institutionId}`);
         const institution = await instResponse.json();
         setInstitutionData(institution);
       }
 
-      // Fetch credit transactions
+      // Fetch credit transactions for tutor
       const transResponse = await fetch(`/api/credits?userId=${session?.user?.id}`);
       const trans = await transResponse.json();
       setTransactions(trans);
@@ -83,16 +87,10 @@ export default function StudentCreditsPage() {
     }
   };
 
-  const creditBalance = userData ? parseFloat(userData.creditBalance) : 0;
-  const minRequired = institutionData?.creditRequirementMin || 3;
-  const maxRequired = institutionData?.creditRequirementMax || 6;
-  const progressPercentage = (creditBalance / maxRequired) * 100;
-  const isMinimumMet = creditBalance >= minRequired;
-
   if (status === 'loading' || loading) {
     return (
       <App>
-        <DashboardLayout role="student" user={{ name: '', email: '', avatar: '' }}>
+        <DashboardLayout role="tutor" user={{ name: '', email: '', avatar: '' }}>
           <div style={{ textAlign: 'center', padding: '50px' }}>
             <Spin size="large" />
           </div>
@@ -111,6 +109,12 @@ export default function StudentCreditsPage() {
     avatar: session.user.image || '',
   };
 
+  const creditBalance = tutorData ? parseFloat(tutorData.creditBalance || '0') : 0;
+  const minRequired = institutionData?.creditRequirementMin || 3;
+  const maxRequired = institutionData?.creditRequirementMax || 6;
+  const progressPercentage = (creditBalance / maxRequired) * 100;
+  const isMinimumMet = creditBalance >= minRequired;
+
   const columns: ColumnsType<CreditTransaction> = [
     {
       title: `${t('student.creditsPage.dateSubmitted')} / Date Submitted`,
@@ -118,6 +122,11 @@ export default function StudentCreditsPage() {
       key: 'submittedAt',
       render: (date) => dayjs(date).format('MMM DD, YYYY'),
       sorter: (a, b) => dayjs(a.submittedAt).unix() - dayjs(b.submittedAt).unix(),
+    },
+    {
+      title: `${t('tutor.creditsPage.student')} / Student`,
+      key: 'student',
+      render: (_, record) => record.student ? `${record.student.firstName} ${record.student.lastName}` : '-',
     },
     {
       title: `${t('student.creditsPage.credits')} / Credits`,
@@ -170,8 +179,8 @@ export default function StudentCreditsPage() {
 
   return (
     <App>
-      <DashboardLayout role="student" user={user}>
-        <Title level={2}>{t('student.creditsPage.title')} / My Credits</Title>
+      <DashboardLayout role="tutor" user={user}>
+        <Title level={2}>{t('tutor.creditsPage.title')} / Tutorial Credits</Title>
 
         {/* Credit Balance Overview */}
         <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
@@ -182,18 +191,22 @@ export default function StudentCreditsPage() {
                 value={creditBalance.toFixed(1)}
                 prefix={<TrophyOutlined />}
                 valueStyle={{ color: '#3f8600' }}
-                suffix={`/ ${maxRequired}`}
+                suffix={institutionData ? `/ ${maxRequired}` : ''}
               />
-              <Progress
-                percent={Math.min(progressPercentage, 100)}
-                status={isMinimumMet ? 'success' : 'active'}
-                strokeColor={isMinimumMet ? '#52c41a' : '#1890ff'}
-              />
-              <div style={{ marginTop: 8 }}>
-                <Text type="secondary">
-                  {t('student.creditsPage.minimumRequired')}: {minRequired} {t('student.creditsPage.credits')}
-                </Text>
-              </div>
+              {institutionData && (
+                <>
+                  <Progress
+                    percent={Math.min(progressPercentage, 100)}
+                    status={isMinimumMet ? 'success' : 'active'}
+                    strokeColor={isMinimumMet ? '#52c41a' : '#1890ff'}
+                  />
+                  <div style={{ marginTop: 8 }}>
+                    <Text type="secondary">
+                      {t('student.creditsPage.minimumRequired')}: {minRequired} {t('student.creditsPage.credits')}
+                    </Text>
+                  </div>
+                </>
+              )}
             </Card>
           </Col>
 
@@ -231,14 +244,14 @@ export default function StudentCreditsPage() {
         </Row>
 
         {/* Status Message */}
-        {userData && institutionData && (
+        {tutorData && institutionData && (
           <Card style={{ marginBottom: 24, background: isMinimumMet ? '#f6ffed' : '#e6f7ff', borderColor: isMinimumMet ? '#b7eb8f' : '#91d5ff' }}>
             <Space>
               {isMinimumMet ? <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 20 }} /> : <ClockCircleOutlined style={{ color: '#1890ff', fontSize: 20 }} />}
               <div>
                 <Text strong style={{ fontSize: 16 }}>
                   {isMinimumMet
-                    ? `✅ ${t('student.creditsPage.congratulations')}! ${t('student.creditsPage.metMinimum')} ${userData.academicYear}`
+                    ? `✅ ${t('student.creditsPage.congratulations')}! ${t('student.creditsPage.metMinimum')} ${tutorData.academicYear}`
                     : `${t('student.creditsPage.needMore')} ${(minRequired - creditBalance).toFixed(1)} ${t('student.creditsPage.credits')} ${t('student.creditsPage.toMeetMinimum')}`
                   }
                 </Text>

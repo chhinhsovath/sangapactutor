@@ -7,6 +7,8 @@ declare module 'next-auth' {
     role: string;
     authProvider?: string;
     tutorId?: number;
+    institutionId?: number;
+    avatar?: string;
   }
 
   interface Session {
@@ -18,6 +20,8 @@ declare module 'next-auth' {
       role: string;
       authProvider?: string;
       tutorId?: number;
+      institutionId?: number;
+      avatar?: string;
     };
   }
 
@@ -33,5 +37,7 @@ declare module 'next-auth/jwt' {
     role?: string;
     authProvider?: string;
     tutorId?: number;
+    institutionId?: number;
+    avatar?: string;
   }
 }

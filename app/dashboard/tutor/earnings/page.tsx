@@ -1,37 +1,46 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Card, Space, Tag, Typography, Spin } from 'antd';
+import { Table, Button, Modal, Form, Input, InputNumber, Select, App, Card, Space, Tag, Typography, Spin } from 'antd';
 import { PlusOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import dayjs from 'dayjs';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const { TextArea } = Input;
 const { Title } = Typography;
 
 export default function TutorEarningsPage() {
+  const { t } = useLanguage();
   const { data: session, status } = useSession();
+  const router = useRouter();
+  const { message } = App.useApp();
   const [earningsData, setEarningsData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [adjustmentModalVisible, setAdjustmentModalVisible] = useState(false);
   const [form] = Form.useForm();
 
-  // Mock tutor ID - in real app, get from auth
-  const tutorId = 1;
-
   useEffect(() => {
-    fetchEarnings();
-  }, []);
+    if (status === 'unauthenticated') {
+      router.push('/login');
+      return;
+    }
+
+    if (status === 'authenticated' && session?.user?.tutorId) {
+      fetchEarnings();
+    }
+  }, [status, session]);
 
   const fetchEarnings = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/earnings?tutorId=${tutorId}`);
+      const response = await fetch(`/api/earnings?tutorId=${session?.user?.tutorId}`);
       const data = await response.json();
       setEarningsData(data);
     } catch (error) {
-      message.error('Failed to fetch earnings');
+      message.error(t('errors.fetchFailed') || 'Failed to fetch earnings');
     } finally {
       setLoading(false);
     }
@@ -43,30 +52,31 @@ export default function TutorEarningsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tutorId,
+          tutorId: session?.user?.tutorId,
           ...values,
         }),
       });
 
       if (response.ok) {
-        message.success('Adjustment added successfully');
+        message.success(t('tutor.earningsPage.adjustmentAdded') || 'Adjustment added successfully');
         setAdjustmentModalVisible(false);
         form.resetFields();
         fetchEarnings();
       } else {
-        message.error('Failed to add adjustment');
+        message.error(t('errors.createFailed') || 'Failed to add adjustment');
       }
     } catch (error) {
-      message.error('Failed to add adjustment');
+      message.error(t('errors.createFailed') || 'Failed to add adjustment');
     }
   };
 
   const handleDeleteAdjustment = (adjustmentId: number) => {
     Modal.confirm({
-      title: 'Delete Adjustment',
-      content: 'Are you sure you want to delete this adjustment?',
-      okText: 'Yes, Delete',
+      title: t('common.delete') || 'Delete Adjustment',
+      content: t('admin.earningsPage.deleteConfirm') || 'Are you sure you want to delete this adjustment?',
+      okText: t('common.yes') || 'Yes, Delete',
       okType: 'danger',
+      cancelText: t('common.cancel'),
       async onOk() {
         try {
           const response = await fetch(`/api/earnings/${adjustmentId}`, {
@@ -74,13 +84,13 @@ export default function TutorEarningsPage() {
           });
 
           if (response.ok) {
-            message.success('Adjustment deleted successfully');
+            message.success(t('tutor.earningsPage.adjustmentDeleted') || 'Adjustment deleted successfully');
             fetchEarnings();
           } else {
-            message.error('Failed to delete adjustment');
+            message.error(t('errors.deleteFailed') || 'Failed to delete adjustment');
           }
         } catch (error) {
-          message.error('Failed to delete adjustment');
+          message.error(t('errors.deleteFailed') || 'Failed to delete adjustment');
         }
       },
     });
@@ -116,16 +126,18 @@ export default function TutorEarningsPage() {
     a.download = `earnings-${dayjs().format('YYYY-MM-DD')}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
-    message.success('Earnings exported successfully');
+    message.success(t('tutor.earningsPage.exportedSuccessfully') || 'Earnings exported successfully');
   };
 
   if (status === 'loading' || loading) {
     return (
-      <DashboardLayout role="tutor" user={{ name: '', email: '', avatar: '' }}>
-        <div style={{ textAlign: 'center', padding: '50px' }}>
-          <Spin size="large" />
-        </div>
-      </DashboardLayout>
+      <App>
+        <DashboardLayout role="tutor" user={{ name: '', email: '', avatar: '' }}>
+          <div style={{ textAlign: 'center', padding: '50px' }}>
+            <Spin size="large" />
+          </div>
+        </DashboardLayout>
+      </App>
     );
   }
 
@@ -141,14 +153,14 @@ export default function TutorEarningsPage() {
 
   const bookingColumns = [
     {
-      title: 'Date',
+      title: `${t('common.date')} / Date`,
       dataIndex: 'scheduledAt',
       key: 'scheduledAt',
       render: (date: string) => dayjs(date).format('MMM DD, YYYY'),
       sorter: (a: any, b: any) => dayjs(a.scheduledAt).unix() - dayjs(b.scheduledAt).unix(),
     },
     {
-      title: 'Student Name',
+      title: `${t('tutor.earningsPage.title')} / Student Name`,
       key: 'student',
       render: (_: any, record: any) => {
         const student = record.student;
@@ -156,13 +168,13 @@ export default function TutorEarningsPage() {
       },
     },
     {
-      title: 'Duration',
+      title: `${t('tutor.earningsPage.duration')} / Duration`,
       dataIndex: 'duration',
       key: 'duration',
       render: (duration: number) => `${duration} min`,
     },
     {
-      title: 'Amount',
+      title: `${t('tutor.earningsPage.amount')} / Amount`,
       dataIndex: 'price',
       key: 'price',
       render: (price: string) => (
@@ -220,71 +232,72 @@ export default function TutorEarningsPage() {
   ];
 
   return (
-    <DashboardLayout role="tutor" user={user}>
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Title level={2}>Earnings</Title>
-          <Space>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => setAdjustmentModalVisible(true)}
-            >
-              Add Adjustment
-            </Button>
-            <Button icon={<DownloadOutlined />} onClick={handleExport}>
-              Export CSV
-            </Button>
-          </Space>
-        </div>
-
-        {/* Summary Cards */}
-        {earningsData && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px', marginTop: '24px' }}>
-            <Card>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>
-                  Total Earnings
-                </div>
-                <div style={{ fontSize: '36px', fontWeight: 'bold', color: '#1890ff' }}>
-                  ${earningsData.totalEarnings.toFixed(2)}
-                </div>
-              </div>
-            </Card>
-
-            <Card>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>
-                  From Lessons
-                </div>
-                <div style={{ fontSize: '36px', fontWeight: 'bold', color: '#52c41a' }}>
-                  ${earningsData.totalFromBookings.toFixed(2)}
-                </div>
-                <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-                  {earningsData.bookings.length} completed lessons
-                </div>
-              </div>
-            </Card>
-
-            <Card>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>
-                  Adjustments
-                </div>
-                <div style={{ fontSize: '36px', fontWeight: 'bold', color: earningsData.totalAdjustments >= 0 ? '#52c41a' : '#ff4d4f' }}>
-                  {earningsData.totalAdjustments >= 0 ? '+' : ''}${earningsData.totalAdjustments.toFixed(2)}
-                </div>
-                <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-                  {earningsData.adjustments.length} adjustments
-                </div>
-              </div>
-            </Card>
+    <App>
+      <DashboardLayout role="tutor" user={user}>
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Title level={2}>{t('tutor.earningsPage.title')} / Earnings</Title>
+            <Space>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => setAdjustmentModalVisible(true)}
+              >
+                {t('tutor.earningsPage.addAdjustment')} / Add Adjustment
+              </Button>
+              <Button icon={<DownloadOutlined />} onClick={handleExport}>
+                {t('tutor.earningsPage.exportCsv')} / Export CSV
+              </Button>
+            </Space>
           </div>
-        )}
 
-        {/* Lesson Earnings */}
-        <div style={{ marginTop: '32px' }}>
-          <Title level={3}>Lesson Earnings</Title>
+          {/* Summary Cards */}
+          {earningsData && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px', marginTop: '24px' }}>
+              <Card>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>
+                    {t('tutor.earningsPage.totalEarnings')} / Total Earnings
+                  </div>
+                  <div style={{ fontSize: '36px', fontWeight: 'bold', color: '#1890ff' }}>
+                    ${earningsData.totalEarnings.toFixed(2)}
+                  </div>
+                </div>
+              </Card>
+
+              <Card>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>
+                    {t('tutor.earningsPage.fromLessons')} / From Lessons
+                  </div>
+                  <div style={{ fontSize: '36px', fontWeight: 'bold', color: '#52c41a' }}>
+                    ${earningsData.totalFromBookings.toFixed(2)}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                    {earningsData.bookings.length} {t('tutor.earningsPage.completedLessons') || 'completed lessons'}
+                  </div>
+                </div>
+              </Card>
+
+              <Card>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>
+                    {t('tutor.earningsPage.adjustments')} / Adjustments
+                  </div>
+                  <div style={{ fontSize: '36px', fontWeight: 'bold', color: earningsData.totalAdjustments >= 0 ? '#52c41a' : '#ff4d4f' }}>
+                    {earningsData.totalAdjustments >= 0 ? '+' : ''}${earningsData.totalAdjustments.toFixed(2)}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                    {earningsData.adjustments.length} adjustments
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {/* Lesson Earnings */}
+          <div style={{ marginTop: '32px' }}>
+            <Title level={3}>{t('tutor.earningsPage.lessonEarnings')} / Lesson Earnings</Title>
           <Table
             columns={bookingColumns}
             dataSource={earningsData?.bookings || []}
@@ -294,9 +307,9 @@ export default function TutorEarningsPage() {
           />
         </div>
 
-        {/* Adjustments */}
-        <div style={{ marginTop: '32px' }}>
-          <Title level={3}>Adjustments</Title>
+          {/* Adjustments */}
+          <div style={{ marginTop: '32px' }}>
+            <Title level={3}>{t('tutor.earningsPage.adjustments')} / Adjustments</Title>
           <Table
             columns={adjustmentColumns}
             dataSource={earningsData?.adjustments || []}
@@ -351,7 +364,8 @@ export default function TutorEarningsPage() {
             </Form.Item>
           </Form>
         </Modal>
-      </div>
-    </DashboardLayout>
+        </div>
+      </DashboardLayout>
+    </App>
   );
 }

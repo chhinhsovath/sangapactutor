@@ -68,6 +68,9 @@ export const authOptions: NextAuthOptions = {
           image: user.avatar,
           role: user.role,
           authProvider: user.authProvider || 'local',
+          tutorId: user.tutorId || undefined,
+          institutionId: user.institutionId || undefined,
+          avatar: user.avatar || undefined,
         };
       },
     }),
@@ -127,6 +130,9 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.role = user.role;
         token.authProvider = user.authProvider;
+        token.tutorId = user.tutorId;
+        token.institutionId = user.institutionId;
+        token.avatar = user.avatar;
       }
 
       // If signing in with Google, fetch user data
@@ -139,6 +145,9 @@ export const authOptions: NextAuthOptions = {
           token.id = dbUser.id.toString();
           token.role = dbUser.role;
           token.authProvider = dbUser.authProvider || 'google';
+          token.tutorId = dbUser.tutorId || undefined;
+          token.institutionId = dbUser.institutionId || undefined;
+          token.avatar = dbUser.avatar || undefined;
         }
       }
 
@@ -150,6 +159,9 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
         session.user.authProvider = token.authProvider as string;
+        session.user.tutorId = token.tutorId as number | undefined;
+        session.user.institutionId = token.institutionId as number | undefined;
+        session.user.avatar = token.avatar as string | undefined;
       }
       return session;
     },

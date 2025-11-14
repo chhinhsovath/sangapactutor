@@ -1,11 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, Tabs, Table, Button, Space, Tag, Modal, Descriptions, message, Typography, Avatar, Rate } from 'antd';
+import { Card, Tabs, Table, Button, Space, Tag, Modal, Descriptions, App, Typography, Avatar, Rate, Spin } from 'antd';
 import { CheckOutlined, CloseOutlined, UserOutlined, TrophyOutlined, HeartOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import Link from 'next/link';
+import DashboardLayout from '@/components/dashboard/DashboardLayout';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 const { Title, Text } = Typography;
 
@@ -34,26 +38,33 @@ interface Match {
 }
 
 export default function MatchingDashboard() {
+  const { t } = useLanguage();
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const { message } = App.useApp();
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('pending');
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
 
-  // TODO: Get from authenticated user session
-  const userId = 123;
-  const userRole = ('tutor' as 'tutor' | 'mentee'); // TODO: Get from session
-
   useEffect(() => {
-    fetchMatches();
-  }, [activeTab]);
+    if (status === 'unauthenticated') {
+      router.push('/login');
+      return;
+    }
+
+    if (status === 'authenticated' && session?.user?.id) {
+      fetchMatches();
+    }
+  }, [status, session, activeTab]);
 
   const fetchMatches = async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
-        userId: userId.toString(),
-        role: userRole,
+        userId: session!.user!.id!.toString(),
+        role: 'mentee',
         status: activeTab,
       });
 
@@ -61,7 +72,7 @@ export default function MatchingDashboard() {
       const data = await response.json();
       setMatches(data);
     } catch (error) {
-      message.error('Failed to fetch matches');
+      message.error(t('errors.fetchFailed'));
       console.error('Error fetching matches:', error);
     } finally {
       setLoading(false);
@@ -74,8 +85,8 @@ export default function MatchingDashboard() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId,
-          role: userRole,
+          userId: parseInt(session!.user!.id!),
+          role: 'mentee',
         }),
       });
 
@@ -86,19 +97,19 @@ export default function MatchingDashboard() {
         setDetailModalVisible(false);
       } else {
         const error = await response.json();
-        message.error(error.error || 'Failed to accept match');
+        message.error(error.error || t('errors.updateFailed'));
       }
     } catch (error) {
-      message.error('Failed to accept match');
+      message.error(t('errors.updateFailed'));
       console.error('Error accepting match:', error);
     }
   };
 
   const handleReject = async (matchId: number, reason?: string) => {
     Modal.confirm({
-      title: 'Reject Match',
-      content: 'Are you sure you want to reject this match? This action cannot be undone.',
-      okText: 'Yes, Reject',
+      title: `${t('admin.matchingPage.reject')} / Reject Match`,
+      content: `តើអ្នកប្រាកដថាចង់បដិសេធការផ្គូផ្គងនេះទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។ / Are you sure you want to reject this match? This action cannot be undone.`,
+      okText: `${t('common.yes')} / Yes, Reject`,
       okType: 'danger',
       onOk: async () => {
         try {
@@ -106,22 +117,22 @@ export default function MatchingDashboard() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              userId,
-              role: userRole,
+              userId: parseInt(session!.user!.id!),
+              role: 'mentee',
               rejectionReason: reason || 'Not interested',
             }),
           });
 
           if (response.ok) {
-            message.success('Match rejected');
+            message.success(t('admin.matchingPage.rejected'));
             fetchMatches();
             setDetailModalVisible(false);
           } else {
             const error = await response.json();
-            message.error(error.error || 'Failed to reject match');
+            message.error(error.error || t('errors.updateFailed'));
           }
         } catch (error) {
-          message.error('Failed to reject match');
+          message.error(t('errors.updateFailed'));
           console.error('Error rejecting match:', error);
         }
       },
@@ -133,9 +144,31 @@ export default function MatchingDashboard() {
     setDetailModalVisible(true);
   };
 
+  if (status === 'loading' || loading) {
+    return (
+      <App>
+        <DashboardLayout role="student" user={{ name: '', email: '', avatar: '' }}>
+          <div style={{ textAlign: 'center', padding: '50px' }}>
+            <Spin size="large" />
+          </div>
+        </DashboardLayout>
+      </App>
+    );
+  }
+
+  if (!session?.user) {
+    return null;
+  }
+
+  const user = {
+    name: session.user.name || '',
+    email: session.user.email || '',
+    avatar: session.user.image || '',
+  };
+
   const columns: ColumnsType<Match> = [
     {
-      title: userRole === 'tutor' ? 'Student' : 'Tutor',
+      title: `${t('admin.matchingPage.tutor')} / Tutor`,
       key: 'partner',
       render: (_, record) => (
         <Space>
@@ -191,13 +224,10 @@ export default function MatchingDashboard() {
           return <Tag color="green">Active</Tag>;
         }
         if (record.status === 'pending') {
-          if (userRole === 'tutor' && record.acceptedByTutor) {
-            return <Tag color="blue">Waiting for Student</Tag>;
+          if (record.acceptedByMentee) {
+            return <Tag color="blue">{t('admin.matchingPage.pending')} - Waiting for Tutor / រងចាំគ្រូបង្រៀន</Tag>;
           }
-          if (userRole === 'mentee' && record.acceptedByMentee) {
-            return <Tag color="blue">Waiting for Tutor</Tag>;
-          }
-          return <Tag color="orange">Pending Your Response</Tag>;
+          return <Tag color="orange">{t('admin.matchingPage.pending')} - Your Response / ការឆ្លើយតបរបស់អ្នក</Tag>;
         }
         return <Tag>{record.status}</Tag>;
       },
@@ -217,11 +247,7 @@ export default function MatchingDashboard() {
           <Button type="link" onClick={() => showDetails(record)}>
             View Details
           </Button>
-          {record.status === 'pending' && (
-            <>
-              {(userRole === 'tutor' && !record.acceptedByTutor) ||
-               (userRole === 'mentee' && !record.acceptedByMentee) ? (
-                <>
+          {record.status === 'pending' && !record.acceptedByMentee && (
                   <Button
                     type="primary"
                     size="small"
@@ -230,6 +256,8 @@ export default function MatchingDashboard() {
                   >
                     Accept
                   </Button>
+              )}
+              {record.status === 'pending' && !record.acceptedByMentee && (
                   <Button
                     danger
                     size="small"
@@ -238,26 +266,24 @@ export default function MatchingDashboard() {
                   >
                     Reject
                   </Button>
-                </>
-              ) : null}
-            </>
-          )}
+              )}
         </Space>
       ),
     },
   ];
 
   return (
-    <div style={{ padding: '24px' }}>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Title level={2}>
-          <HeartOutlined style={{ marginRight: 8, color: '#ff6b6b' }} />
-          My Matches
-        </Title>
-        <Link href="/dashboard/student/matching/preferences">
-          <Button>Update Preferences</Button>
-        </Link>
-      </div>
+    <App>
+      <DashboardLayout role="student" user={user}>
+        <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Title level={2}>
+            <HeartOutlined style={{ marginRight: 8, color: '#ff6b6b' }} />
+            {`${t('admin.matchingPage.title')} / My Matches`}
+          </Title>
+          <Link href="/dashboard/student/matching/preferences">
+            <Button>{`${t('common.update')} / Update Preferences`}</Button>
+          </Link>
+        </div>
 
       <Card>
         <Tabs
@@ -266,7 +292,7 @@ export default function MatchingDashboard() {
           items={[
             {
               key: 'pending',
-              label: 'Pending Matches',
+              label: `${t('admin.matchingPage.pending')} / Pending Matches`,
               children: (
                 <Table
                   columns={columns}
@@ -279,7 +305,7 @@ export default function MatchingDashboard() {
             },
             {
               key: 'accepted',
-              label: 'Active Matches',
+              label: `${t('admin.matchingPage.active')} / Active Matches`,
               children: (
                 <Table
                   columns={columns}
@@ -292,7 +318,7 @@ export default function MatchingDashboard() {
             },
             {
               key: 'completed',
-              label: 'Completed',
+              label: `${t('admin.matchingPage.completed')} / Completed`,
               children: (
                 <Table
                   columns={columns}
@@ -318,8 +344,7 @@ export default function MatchingDashboard() {
         footer={
           selectedMatch && selectedMatch.status === 'pending' ? (
             <Space>
-              {(userRole === 'tutor' && !selectedMatch.acceptedByTutor) ||
-               (userRole === 'mentee' && !selectedMatch.acceptedByMentee) ? (
+              {selectedMatch.status === 'pending' && !selectedMatch.acceptedByMentee && (
                 <>
                   <Button
                     type="primary"
@@ -336,8 +361,6 @@ export default function MatchingDashboard() {
                     Reject Match
                   </Button>
                 </>
-              ) : (
-                <Button onClick={() => setDetailModalVisible(false)}>Close</Button>
               )}
             </Space>
           ) : (
@@ -421,7 +444,7 @@ export default function MatchingDashboard() {
                 <ul style={{ marginTop: 8, marginBottom: 0 }}>
                   <li>
                     <Text type="secondary">
-                      Both you and the {userRole === 'tutor' ? 'student' : 'tutor'} need to accept for the match to become active
+                      ទាំអ្នក និងគ្រូបង្រៀនត្រូវទទួលយកដើម្បីឧការផ្គូផ្គងក្លាយជាសកម្ម / Both you and the tutor need to accept for the match to become active
                     </Text>
                   </li>
                   <li>
@@ -440,6 +463,7 @@ export default function MatchingDashboard() {
           </>
         )}
       </Modal>
-    </div>
+      </DashboardLayout>
+    </App>
   );
 }

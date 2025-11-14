@@ -1,10 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Table, Card, Button, Space, Tag, Modal, Form, Input, message, Typography, Tabs, Descriptions } from 'antd';
+import { Table, Card, Button, Space, Tag, Modal, Form, Input, message, Typography, Tabs, Descriptions, App } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, EyeOutlined, TrophyOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/contexts/LanguageContext';
+import DashboardLayout from '@/components/dashboard/DashboardLayout';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -33,6 +37,10 @@ interface CreditTransaction {
 }
 
 export default function CreditApprovalsPage() {
+  const { t } = useLanguage();
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const { message: msg } = App.useApp();
   const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('pending');
@@ -40,19 +48,23 @@ export default function CreditApprovalsPage() {
   const [selectedTransaction, setSelectedTransaction] = useState<CreditTransaction | null>(null);
   const [form] = Form.useForm();
 
-  // TODO: Get from authenticated user's session
-  const institutionId = 1;
-  const currentUserId = 10; // Faculty coordinator ID
-
   useEffect(() => {
-    fetchTransactions();
-  }, [activeTab]);
+    if (status === 'unauthenticated') {
+      router.push('/login');
+      return;
+    }
+
+    if (status === 'authenticated' && session?.user?.institutionId) {
+      fetchTransactions();
+    }
+  }, [status, session, activeTab]);
 
   const fetchTransactions = async () => {
+    if (!session?.user?.institutionId) return;
     setLoading(true);
     try {
       const params = new URLSearchParams({
-        institutionId: institutionId.toString(),
+        institutionId: session.user.institutionId.toString(),
         status: activeTab,
       });
 
@@ -60,7 +72,7 @@ export default function CreditApprovalsPage() {
       const data = await response.json();
       setTransactions(data);
     } catch (error) {
-      message.error('Failed to fetch credit transactions');
+      msg.error(t('errors.fetchFailed') || 'Failed to fetch credit transactions');
       console.error('Error fetching transactions:', error);
     } finally {
       setLoading(false);
@@ -68,18 +80,20 @@ export default function CreditApprovalsPage() {
   };
 
   const handleApprove = async (transactionId: number) => {
+    if (!session?.user?.id) return;
+
     try {
       const response = await fetch(`/api/credits/${transactionId}/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          reviewedBy: currentUserId,
+          reviewedBy: parseInt(session.user.id),
           reviewNotes: form.getFieldValue('reviewNotes') || 'Approved',
         }),
       });
 
       if (response.ok) {
-        message.success('Credit transaction approved');
+        msg.success(t('institution.creditApproved') || 'Credit transaction approved');
         setReviewModalVisible(false);
         form.resetFields();
         fetchTransactions();
@@ -88,38 +102,38 @@ export default function CreditApprovalsPage() {
         await applyCredits(transactionId);
       } else {
         const error = await response.json();
-        message.error(error.error || 'Failed to approve transaction');
+        msg.error(error.error || t('institution.approveFailed') || 'Failed to approve transaction');
       }
     } catch (error) {
-      message.error('Failed to approve transaction');
+      msg.error(t('institution.approveFailed') || 'Failed to approve transaction');
       console.error('Error approving transaction:', error);
     }
   };
 
   const handleReject = async (values: any) => {
-    if (!selectedTransaction) return;
+    if (!selectedTransaction || !session?.user?.id) return;
 
     try {
       const response = await fetch(`/api/credits/${selectedTransaction.id}/reject`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          reviewedBy: currentUserId,
+          reviewedBy: parseInt(session.user.id),
           reviewNotes: values.reviewNotes,
         }),
       });
 
       if (response.ok) {
-        message.success('Credit transaction rejected');
+        msg.success(t('institution.creditRejected') || 'Credit transaction rejected');
         setReviewModalVisible(false);
         form.resetFields();
         fetchTransactions();
       } else {
         const error = await response.json();
-        message.error(error.error || 'Failed to reject transaction');
+        msg.error(error.error || t('institution.rejectFailed') || 'Failed to reject transaction');
       }
     } catch (error) {
-      message.error('Failed to reject transaction');
+      msg.error(t('institution.rejectFailed') || 'Failed to reject transaction');
       console.error('Error rejecting transaction:', error);
     }
   };
@@ -131,10 +145,10 @@ export default function CreditApprovalsPage() {
       });
 
       if (response.ok) {
-        message.success('Credits applied to student balance');
+        msg.success(t('institution.creditsApplied') || 'Credits applied to student balance');
       } else {
         const error = await response.json();
-        message.warning(error.error || 'Failed to apply credits automatically');
+        msg.warning(error.error || t('institution.applyFailed') || 'Failed to apply credits automatically');
       }
     } catch (error) {
       console.error('Error applying credits:', error);
@@ -148,7 +162,7 @@ export default function CreditApprovalsPage() {
 
   const columns: ColumnsType<CreditTransaction> = [
     {
-      title: 'Student',
+      title: `${t('tutor.creditsPage.student') || 'Student'} / Student`,
       key: 'student',
       render: (_, record) => (
         <div>
@@ -158,7 +172,7 @@ export default function CreditApprovalsPage() {
       ),
     },
     {
-      title: 'Credits',
+      title: `${t('institution.credits') || 'Credits'} / Credits`,
       dataIndex: 'creditsEarned',
       key: 'creditsEarned',
       render: (credits) => (
@@ -169,19 +183,19 @@ export default function CreditApprovalsPage() {
       ),
     },
     {
-      title: 'Academic Year',
+      title: `${t('institution.academicYear') || 'Academic Year'} / Academic Year`,
       dataIndex: 'academicYear',
       key: 'academicYear',
     },
     {
-      title: 'Submitted',
+      title: `${t('institution.submitted') || 'Submitted'} / Submitted`,
       dataIndex: 'submittedAt',
       key: 'submittedAt',
       render: (date) => dayjs(date).format('MMM DD, YYYY'),
       sorter: (a, b) => dayjs(a.submittedAt).unix() - dayjs(b.submittedAt).unix(),
     },
     {
-      title: 'Status',
+      title: `${t('common.status') || 'Status'} / Status`,
       dataIndex: 'status',
       key: 'status',
       render: (status) => {
@@ -195,7 +209,7 @@ export default function CreditApprovalsPage() {
       },
     },
     {
-      title: 'Actions',
+      title: `${t('common.actions') || 'Actions'} / Actions`,
       key: 'actions',
       render: (_, record) => (
         <Space>
@@ -204,7 +218,7 @@ export default function CreditApprovalsPage() {
             icon={<EyeOutlined />}
             onClick={() => showReviewModal(record)}
           >
-            Review
+            {t('institution.review') || 'Review'} / Review
           </Button>
           {record.status === 'pending' && (
             <>
@@ -217,7 +231,7 @@ export default function CreditApprovalsPage() {
                 }}
                 style={{ color: '#52c41a' }}
               >
-                Quick Approve
+                {t('institution.quickApprove') || 'Quick Approve'} / Quick Approve
               </Button>
             </>
           )}
@@ -226,7 +240,7 @@ export default function CreditApprovalsPage() {
               type="link"
               onClick={() => applyCredits(record.id)}
             >
-              Apply Credits
+              {t('institution.applyCredits') || 'Apply Credits'} / Apply Credits
             </Button>
           )}
         </Space>
@@ -234,10 +248,34 @@ export default function CreditApprovalsPage() {
     },
   ];
 
+  if (status === 'loading' || loading) {
+    return (
+      <App>
+        <DashboardLayout role={session?.user?.role as any || 'faculty_coordinator'} user={{
+          name: session?.user?.name || '',
+          email: session?.user?.email || '',
+          avatar: session?.user?.avatar,
+        }}>
+          <div style={{ padding: '24px', textAlign: 'center' }}>
+            <Typography.Text>{t('common.loading') || 'Loading...'}</Typography.Text>
+          </div>
+        </DashboardLayout>
+      </App>
+    );
+  }
+
+  const user = {
+    name: session?.user?.name || '',
+    email: session?.user?.email || '',
+    avatar: session?.user?.avatar,
+  };
+
   return (
+    <App>
+      <DashboardLayout role={session?.user?.role as any || 'faculty_coordinator'} user={user}>
     <div style={{ padding: '24px' }}>
       <Card>
-        <Title level={3}>Credit Approvals</Title>
+        <Title level={3}>{t('institution.creditApprovals') || 'Credit Approvals'} / Credit Approvals</Title>
 
         <Tabs
           activeKey={activeTab}
@@ -245,7 +283,7 @@ export default function CreditApprovalsPage() {
           items={[
             {
               key: 'pending',
-              label: 'Pending Review',
+              label: `${t('institution.pendingReview') || 'Pending Review'} / Pending Review`,
               children: (
                 <Table
                   columns={columns}
@@ -258,7 +296,7 @@ export default function CreditApprovalsPage() {
             },
             {
               key: 'approved',
-              label: 'Approved',
+              label: `${t('institution.approved') || 'Approved'} / Approved`,
               children: (
                 <Table
                   columns={columns}
@@ -271,7 +309,7 @@ export default function CreditApprovalsPage() {
             },
             {
               key: 'credited',
-              label: 'Credited',
+              label: `${t('institution.credited') || 'Credited'} / Credited`,
               children: (
                 <Table
                   columns={columns}
@@ -284,7 +322,7 @@ export default function CreditApprovalsPage() {
             },
             {
               key: 'rejected',
-              label: 'Rejected',
+              label: `${t('institution.rejected') || 'Rejected'} / Rejected`,
               children: (
                 <Table
                   columns={columns}
@@ -301,7 +339,7 @@ export default function CreditApprovalsPage() {
 
       {/* Review Modal */}
       <Modal
-        title="Review Credit Transaction"
+        title={`${t('institution.reviewCreditTransaction') || 'Review Credit Transaction'} / Review Credit Transaction`}
         open={reviewModalVisible}
         onCancel={() => {
           setReviewModalVisible(false);
@@ -314,28 +352,28 @@ export default function CreditApprovalsPage() {
         {selectedTransaction && (
           <>
             <Descriptions bordered column={1} style={{ marginBottom: 16 }}>
-              <Descriptions.Item label="Student">
+              <Descriptions.Item label={`${t('tutor.creditsPage.student') || 'Student'} / Student`}>
                 {selectedTransaction.user.firstName} {selectedTransaction.user.lastName}
               </Descriptions.Item>
-              <Descriptions.Item label="Email">
+              <Descriptions.Item label={`${t('auth.email') || 'Email'} / Email`}>
                 {selectedTransaction.user.email}
               </Descriptions.Item>
-              <Descriptions.Item label="Credits Earned">
+              <Descriptions.Item label={`${t('institution.creditsEarned') || 'Credits Earned'} / Credits Earned`}>
                 <Space>
                   <TrophyOutlined style={{ color: '#faad14' }} />
                   {parseFloat(selectedTransaction.creditsEarned).toFixed(1)}
                 </Space>
               </Descriptions.Item>
-              <Descriptions.Item label="Academic Year">
+              <Descriptions.Item label={`${t('institution.academicYear') || 'Academic Year'} / Academic Year`}>
                 {selectedTransaction.academicYear}
               </Descriptions.Item>
-              <Descriptions.Item label="Booking ID">
+              <Descriptions.Item label={`${t('institution.bookingId') || 'Booking ID'} / Booking ID`}>
                 #{selectedTransaction.bookingId}
               </Descriptions.Item>
-              <Descriptions.Item label="Submitted">
+              <Descriptions.Item label={`${t('institution.submitted') || 'Submitted'} / Submitted`}>
                 {dayjs(selectedTransaction.submittedAt).format('MMMM DD, YYYY HH:mm')}
               </Descriptions.Item>
-              <Descriptions.Item label="Status">
+              <Descriptions.Item label={`${t('common.status') || 'Status'} / Status`}>
                 <Tag color={
                   selectedTransaction.status === 'pending' ? 'orange' :
                   selectedTransaction.status === 'approved' ? 'blue' :
@@ -345,7 +383,7 @@ export default function CreditApprovalsPage() {
                 </Tag>
               </Descriptions.Item>
               {selectedTransaction.reviewNotes && (
-                <Descriptions.Item label="Review Notes">
+                <Descriptions.Item label={`${t('institution.reviewNotes') || 'Review Notes'} / Review Notes`}>
                   {selectedTransaction.reviewNotes}
                 </Descriptions.Item>
               )}
@@ -353,8 +391,8 @@ export default function CreditApprovalsPage() {
 
             {selectedTransaction.status === 'pending' && (
               <Form form={form} layout="vertical" onFinish={handleReject}>
-                <Form.Item label="Review Notes" name="reviewNotes">
-                  <TextArea rows={3} placeholder="Add notes about this review..." />
+                <Form.Item label={`${t('institution.reviewNotes') || 'Review Notes'} / Review Notes`} name="reviewNotes">
+                  <TextArea rows={3} placeholder={`${t('institution.addReviewNotes') || 'Add notes about this review...'}`} />
                 </Form.Item>
 
                 <Form.Item>
@@ -364,14 +402,14 @@ export default function CreditApprovalsPage() {
                       icon={<CheckCircleOutlined />}
                       onClick={() => handleApprove(selectedTransaction.id)}
                     >
-                      Approve & Apply Credits
+                      {t('institution.approveAndApply') || 'Approve & Apply Credits'} / Approve & Apply Credits
                     </Button>
                     <Button
                       danger
                       icon={<CloseCircleOutlined />}
                       htmlType="submit"
                     >
-                      Reject
+                      {t('common.reject') || 'Reject'} / Reject
                     </Button>
                   </Space>
                 </Form.Item>
@@ -381,5 +419,7 @@ export default function CreditApprovalsPage() {
         )}
       </Modal>
     </div>
+      </DashboardLayout>
+    </App>
   );
 }
