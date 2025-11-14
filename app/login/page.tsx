@@ -37,19 +37,25 @@ function LoginForm() {
         // Fetch user data from session to determine role
         const response = await fetch('/api/auth/session');
         const session = await response.json();
-        
+
         if (session?.user) {
           const roleName = session.user.role.charAt(0).toUpperCase() + session.user.role.slice(1);
           message.success(`${t('common.welcome')} ${roleName}!`);
-          
+
           // Redirect based on role
-          if (session.user.role === 'admin') {
-            router.push('/dashboard/admin');
-          } else if (session.user.role === 'tutor') {
-            router.push('/dashboard/tutor');
-          } else {
-            router.push('/dashboard/student');
-          }
+          const roleMap: Record<string, string> = {
+            'admin': '/dashboard/admin',
+            'tutor': '/dashboard/tutor',
+            'verified_tutor': '/dashboard/tutor',
+            'student': '/dashboard/student',
+            'mentee': '/dashboard/student',
+            'faculty_coordinator': '/dashboard/faculty_coordinator',
+            'institution_admin': '/dashboard/institution_admin',
+            'student_coordinator': '/dashboard/student_coordinator',
+          };
+
+          const redirectUrl = roleMap[session.user.role] || '/dashboard/student';
+          router.push(redirectUrl);
         }
       }
     } catch (error) {
@@ -178,9 +184,15 @@ function LoginForm() {
           <div style={{ textAlign: 'center' }}>
             <Space direction="vertical" size="small">
               <Text type="secondary" style={{ fontSize: 12 }}>{t('auth.demoAccounts')}</Text>
-              <Text style={{ fontSize: 12 }}>Admin: admin@tutorhub.com / admin123</Text>
-              <Text style={{ fontSize: 12 }}>Tutor: sarah@example.com / tutor123</Text>
-              <Text style={{ fontSize: 12 }}>Student: john@example.com / student123</Text>
+              <Text type="secondary" style={{ fontSize: 11, fontWeight: 600, marginTop: 8 }}>Institution Accounts</Text>
+              <Text style={{ fontSize: 11 }}>Faculty Coordinator: sovan.kim@rupp.edu.kh / demo123</Text>
+              <Text style={{ fontSize: 11 }}>Tutor (RUPP): sokha.chan@rupp.edu.kh / demo123</Text>
+              <Text style={{ fontSize: 11 }}>Mentee (Rural): sophea.prak@kcu.edu.kh / demo123</Text>
+              <Divider style={{ margin: '8px 0' }} />
+              <Text type="secondary" style={{ fontSize: 11, fontWeight: 600 }}>Original Accounts</Text>
+              <Text style={{ fontSize: 11 }}>Admin: admin@tutorhub.com / admin123</Text>
+              <Text style={{ fontSize: 11 }}>Tutor: sarah@example.com / tutor123</Text>
+              <Text style={{ fontSize: 11 }}>Student: john@example.com / student123</Text>
             </Space>
           </div>
         </Card>

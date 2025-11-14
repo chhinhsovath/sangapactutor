@@ -18,6 +18,12 @@ import {
   GlobalOutlined,
   TagsOutlined,
   IdcardOutlined,
+  BankOutlined,
+  CreditCardOutlined,
+  HeartOutlined,
+  TrophyOutlined,
+  SolutionOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -30,7 +36,7 @@ const { Text } = Typography;
 
 interface DashboardLayoutProps {
   children: ReactNode;
-  role: 'student' | 'tutor' | 'admin';
+  role: 'student' | 'tutor' | 'admin' | 'verified_tutor' | 'mentee' | 'faculty_coordinator' | 'institution_admin' | 'student_coordinator';
   user: {
     name: string;
     email: string;
@@ -58,7 +64,7 @@ function DashboardContent({ children, role, user }: DashboardLayoutProps) {
   const getMenuItems = () => {
     const basePrefix = `/dashboard/${role}`;
 
-    if (role === 'student') {
+    if (role === 'student' || role === 'mentee') {
       return [
         {
           key: `${basePrefix}`,
@@ -71,9 +77,19 @@ function DashboardContent({ children, role, user }: DashboardLayoutProps) {
           label: <Link href={`${basePrefix}/find-tutors`}>{t('student.findTutors')}</Link>,
         },
         {
+          key: `${basePrefix}/matching`,
+          icon: <HeartOutlined />,
+          label: <Link href={`${basePrefix}/matching`}>My Matches</Link>,
+        },
+        {
           key: `${basePrefix}/lessons`,
           icon: <BookOutlined />,
           label: <Link href={`${basePrefix}/lessons`}>{t('student.myLessons')}</Link>,
+        },
+        {
+          key: `${basePrefix}/credits`,
+          icon: <CreditCardOutlined />,
+          label: <Link href={`${basePrefix}/credits`}>Credits</Link>,
         },
         {
           key: `${basePrefix}/messages`,
@@ -93,7 +109,7 @@ function DashboardContent({ children, role, user }: DashboardLayoutProps) {
       ];
     }
 
-    if (role === 'tutor') {
+    if (role === 'tutor' || role === 'verified_tutor') {
       return [
         {
           key: `${basePrefix}`,
@@ -106,6 +122,11 @@ function DashboardContent({ children, role, user }: DashboardLayoutProps) {
           label: <Link href={`${basePrefix}/schedule`}>{t('tutor.schedule')}</Link>,
         },
         {
+          key: `${basePrefix}/matching`,
+          icon: <HeartOutlined />,
+          label: <Link href={`${basePrefix}/matching`}>My Matches</Link>,
+        },
+        {
           key: `${basePrefix}/availability`,
           icon: <ClockCircleOutlined />,
           label: <Link href={`${basePrefix}/availability`}>Availability</Link>,
@@ -114,6 +135,11 @@ function DashboardContent({ children, role, user }: DashboardLayoutProps) {
           key: `${basePrefix}/students`,
           icon: <TeamOutlined />,
           label: <Link href={`${basePrefix}/students`}>{t('tutor.students')}</Link>,
+        },
+        {
+          key: `${basePrefix}/credits`,
+          icon: <CreditCardOutlined />,
+          label: <Link href={`${basePrefix}/credits`}>Credits</Link>,
         },
         {
           key: `${basePrefix}/earnings`,
@@ -143,12 +169,84 @@ function DashboardContent({ children, role, user }: DashboardLayoutProps) {
       ];
     }
 
+    // Faculty Coordinator
+    if (role === 'faculty_coordinator' || role === 'institution_admin') {
+      return [
+        {
+          key: `${basePrefix}`,
+          icon: <DashboardOutlined />,
+          label: <Link href={basePrefix}>Dashboard</Link>,
+        },
+        {
+          key: `/dashboard/institution`,
+          icon: <BankOutlined />,
+          label: <Link href="/dashboard/institution">Institution</Link>,
+        },
+        {
+          key: `/dashboard/institution/students`,
+          icon: <TeamOutlined />,
+          label: <Link href="/dashboard/institution/students">Students</Link>,
+        },
+        {
+          key: `/dashboard/institution/credits`,
+          icon: <CreditCardOutlined />,
+          label: <Link href="/dashboard/institution/credits">Credits</Link>,
+        },
+        {
+          key: `/dashboard/institution/partnerships`,
+          icon: <SolutionOutlined />,
+          label: <Link href="/dashboard/institution/partnerships">Partnerships</Link>,
+        },
+        {
+          key: `/dashboard/institution/impact`,
+          icon: <TrophyOutlined />,
+          label: <Link href="/dashboard/institution/impact">Impact</Link>,
+        },
+        {
+          key: `${basePrefix}/settings`,
+          icon: <SettingOutlined />,
+          label: <Link href={`${basePrefix}/settings`}>Settings</Link>,
+        },
+      ];
+    }
+
+    // Student Coordinator
+    if (role === 'student_coordinator') {
+      return [
+        {
+          key: `${basePrefix}`,
+          icon: <DashboardOutlined />,
+          label: <Link href={basePrefix}>Dashboard</Link>,
+        },
+        {
+          key: `${basePrefix}/students`,
+          icon: <TeamOutlined />,
+          label: <Link href={`${basePrefix}/students`}>Students</Link>,
+        },
+        {
+          key: `${basePrefix}/matching`,
+          icon: <HeartOutlined />,
+          label: <Link href={`${basePrefix}/matching`}>Matching</Link>,
+        },
+        {
+          key: `${basePrefix}/credits`,
+          icon: <CreditCardOutlined />,
+          label: <Link href={`${basePrefix}/credits`}>Credits</Link>,
+        },
+      ];
+    }
+
     // Admin
     return [
       {
         key: `${basePrefix}`,
         icon: <DashboardOutlined />,
         label: <Link href={basePrefix}>{t('admin.dashboard')}</Link>,
+      },
+      {
+        key: `${basePrefix}/institutions`,
+        icon: <BankOutlined />,
+        label: <Link href={`${basePrefix}/institutions`}>Institutions</Link>,
       },
       {
         key: `${basePrefix}/users`,
@@ -174,6 +272,21 @@ function DashboardContent({ children, role, user }: DashboardLayoutProps) {
         key: `${basePrefix}/bookings`,
         icon: <BookOutlined />,
         label: <Link href={`${basePrefix}/bookings`}>{t('admin.bookings')}</Link>,
+      },
+      {
+        key: `${basePrefix}/credits`,
+        icon: <CreditCardOutlined />,
+        label: <Link href={`${basePrefix}/credits`}>Credits</Link>,
+      },
+      {
+        key: `${basePrefix}/matching`,
+        icon: <HeartOutlined />,
+        label: <Link href={`${basePrefix}/matching`}>Matching</Link>,
+      },
+      {
+        key: `${basePrefix}/impact`,
+        icon: <TrophyOutlined />,
+        label: <Link href={`${basePrefix}/impact`}>Impact Dashboard</Link>,
       },
       {
         key: `${basePrefix}/reviews`,
