@@ -188,7 +188,7 @@ export default function InstitutionDashboard() {
       {/* Credit System Settings */}
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={12}>
-          <Card title={`${t('institution.creditSystemConfig') || 'Credit System Configuration'} / Credit System Configuration`} bordered={false}>
+          <Card title={`${t('institution.creditSystemConfig') || 'Credit System Configuration'} / Credit System Configuration`} variant="borderless">
             <Space direction="vertical" style={{ width: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Text strong>{t('institution.creditsPerSession') || 'Credits per Session'} / Credits per Session:</Text>
@@ -213,7 +213,7 @@ export default function InstitutionDashboard() {
         </Col>
 
         <Col xs={24} lg={12}>
-          <Card title={`${t('institution.quickActions') || 'Quick Actions'} / Quick Actions`} bordered={false}>
+          <Card title={`${t('institution.quickActions') || 'Quick Actions'} / Quick Actions`} variant="borderless">
             <Space direction="vertical" style={{ width: '100%' }}>
               <Link href="/dashboard/institution/students" style={{ width: '100%' }}>
                 <Button type="primary" block icon={<UserOutlined />}>

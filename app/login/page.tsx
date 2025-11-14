@@ -49,8 +49,8 @@ function LoginForm() {
             'verified_tutor': '/dashboard/tutor',
             'student': '/dashboard/student',
             'mentee': '/dashboard/student',
-            'faculty_coordinator': '/dashboard/faculty_coordinator',
-            'institution_admin': '/dashboard/institution_admin',
+            'faculty_coordinator': '/dashboard/institution',
+            'institution_admin': '/dashboard/institution',
             'student_coordinator': '/dashboard/student_coordinator',
           };
 
