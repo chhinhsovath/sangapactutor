@@ -83,7 +83,7 @@ export async function GET(
 
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         // Verify authentication
@@ -98,7 +98,8 @@ export async function PATCH(
             return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
         }
 
-        const bookingId = parseInt(params.id);
+        const { id } = await params;
+        const bookingId = parseInt(id);
         const body = await request.json();
         const { status } = body;
 
@@ -145,7 +146,7 @@ export async function PATCH(
 
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         // Verify authentication
@@ -160,7 +161,8 @@ export async function DELETE(
             return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
         }
 
-        const bookingId = parseInt(params.id);
+        const { id } = await params;
+        const bookingId = parseInt(id);
 
         // Verify booking exists and user owns it
         const [existingBooking] = await db

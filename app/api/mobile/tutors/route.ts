@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { tutors, subjects, countries } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
     try {
@@ -13,7 +13,21 @@ export async function GET(request: NextRequest) {
         const minRate = searchParams.get('minRate');
         const maxRate = searchParams.get('maxRate');
 
-        let query = db
+        const conditions = [eq(tutors.isActive, true)];
+        if (subjectId) {
+            conditions.push(eq(tutors.subjectId, parseInt(subjectId)));
+        }
+        if (countryId) {
+            conditions.push(eq(tutors.countryId, parseInt(countryId)));
+        }
+        if (specialization) {
+            conditions.push(eq(tutors.specialization, specialization as any));
+        }
+        if (level) {
+            conditions.push(eq(tutors.level, level as any));
+        }
+
+        const results = await db
             .select({
                 id: tutors.id,
                 firstName: tutors.firstName,
@@ -58,23 +72,7 @@ export async function GET(request: NextRequest) {
             .from(tutors)
             .leftJoin(subjects, eq(tutors.subjectId, subjects.id))
             .leftJoin(countries, eq(tutors.countryId, countries.id))
-            .where(eq(tutors.isActive, true));
-
-        // Apply filters
-        if (subjectId) {
-            query = query.where(eq(tutors.subjectId, parseInt(subjectId)));
-        }
-        if (countryId) {
-            query = query.where(eq(tutors.countryId, parseInt(countryId)));
-        }
-        if (specialization) {
-            query = query.where(eq(tutors.specialization, specialization as any));
-        }
-        if (level) {
-            query = query.where(eq(tutors.level, level as any));
-        }
-
-        const results = await query;
+            .where(and(...conditions));
 
         // Filter by price range in memory (since Drizzle doesn't support decimal comparisons easily)
         let filteredResults = results;

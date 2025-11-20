@@ -21,7 +21,12 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const status = searchParams.get('status');
 
-        let query = db
+        const conditions = [eq(bookings.studentId, payload.userId)];
+        if (status) {
+            conditions.push(eq(bookings.status, status as any));
+        }
+
+        const results = await db
             .select({
                 id: bookings.id,
                 studentId: bookings.studentId,
@@ -49,16 +54,7 @@ export async function GET(request: NextRequest) {
             })
             .from(bookings)
             .leftJoin(tutors, eq(bookings.tutorId, tutors.id))
-            .where(eq(bookings.studentId, payload.userId));
-
-        if (status) {
-            query = query.where(and(
-                eq(bookings.studentId, payload.userId),
-                eq(bookings.status, status as any)
-            ));
-        }
-
-        const results = await query;
+            .where(and(...conditions));
         return NextResponse.json(results);
     } catch (error) {
         console.error('Get bookings error:', error);
