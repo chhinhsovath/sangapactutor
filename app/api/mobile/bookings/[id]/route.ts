@@ -6,7 +6,7 @@ import { verifyAccessToken } from '@/lib/jwt';
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         // Verify authentication
@@ -21,7 +21,8 @@ export async function GET(
             return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
         }
 
-        const bookingId = parseInt(params.id);
+        const { id } = await params;
+        const bookingId = parseInt(id);
 
         const [booking] = await db
             .select({
