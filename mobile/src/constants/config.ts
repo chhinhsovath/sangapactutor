@@ -2,13 +2,13 @@
  * API Configuration
  * Reads from environment variables
  *
- * IMPORTANT: The mobile API routes must be deployed separately or alongside the web platform.
- * Currently available at: http://host.docker.internal:3000/api/mobile (local dev)
- * Production URL needs to be configured once the backend API is deployed.
+ * IMPORTANT: The mobile API routes are deployed with the web platform.
+ * Production URL: https://sangapactutor.openplp.com/api/mobile
+ * Local dev: http://localhost:3000/api/mobile
  */
 
-export const API_BASE_URL = process.env.API_BASE_URL || 'http://host.docker.internal:3000/api/mobile';
-export const NODE_ENV = process.env.NODE_ENV || 'development';
+export const API_BASE_URL = process.env.API_BASE_URL || 'https://sangapactutor.openplp.com/api/mobile';
+export const NODE_ENV = process.env.NODE_ENV || 'production';
 
 // API Endpoints reference
 export const API_ENDPOINTS = {
