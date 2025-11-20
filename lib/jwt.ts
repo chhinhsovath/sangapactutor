@@ -1,0 +1,34 @@
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key';
+
+export interface JWTPayload {
+    userId: number;
+    email: string;
+    role: string;
+}
+
+export const generateAccessToken = (payload: JWTPayload): string => {
+    return jwt.sign(payload, JWT_SECRET, { expiresIn: '15m' });
+};
+
+export const generateRefreshToken = (payload: JWTPayload): string => {
+    return jwt.sign(payload, JWT_REFRESH_SECRET, { expiresIn: '7d' });
+};
+
+export const verifyAccessToken = (token: string): JWTPayload | null => {
+    try {
+        return jwt.verify(token, JWT_SECRET) as JWTPayload;
+    } catch (error) {
+        return null;
+    }
+};
+
+export const verifyRefreshToken = (token: string): JWTPayload | null => {
+    try {
+        return jwt.verify(token, JWT_REFRESH_SECRET) as JWTPayload;
+    } catch (error) {
+        return null;
+    }
+};

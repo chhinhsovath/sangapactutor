@@ -1,0 +1,25 @@
+services:
+  mobile:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"  # Expo development server
+    volumes:
+      - .:/app
+      - /app/node_modules  # Avoid overwriting node_modules
+      - /app/.expo  # Also mount .expo directory for Expo config
+    working_dir: /app
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true  # For file watching in Docker
+      - CHOKIDAR_INTERVAL=1000   # Polling interval
+      - REACT_NATIVE_PACKAGER_HOSTNAME=0.0.0.0
+      - REACT_NATIVE_METRO_PORT=8081
+    command: sh -c "npx expo start --dev-client --tunnel"
+    stdin_open: true
+    tty: true
+    # Add device access for Android emulator if needed
+    # privileged: true
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # For connecting to external services
