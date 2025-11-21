@@ -4,6 +4,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import bcrypt from 'bcryptjs';
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -53,7 +54,9 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Please sign in with Google');
         }
 
-        if (user.password !== credentials.password) {
+        // Compare password with bcrypt
+        const isPasswordValid = await bcrypt.compare(credentials.password, user.password || '');
+        if (!isPasswordValid) {
           throw new Error('Invalid email or password');
         }
 

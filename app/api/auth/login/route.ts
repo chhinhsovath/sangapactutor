@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import bcrypt from 'bcryptjs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,9 +36,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // In production, use bcrypt.compare() for password hashing
-    // For now, comparing plain text (as stored in seed data)
-    if (user.password !== password) {
+    // Compare password with bcrypt
+    const isPasswordValid = await bcrypt.compare(password, user.password || '');
+    if (!isPasswordValid) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
